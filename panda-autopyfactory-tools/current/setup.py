@@ -4,9 +4,7 @@
 #
 #
 
-from autopyfactory import factory
-
-release_version=factory.__version__
+release_version='1.0.0'
 
 import commands
 import os
