@@ -104,8 +104,8 @@ class agis(object):
 
         self.logger = logging.getLogger()
 
-        #self.logger.setLevel(logging.DEBUG)
         self.logger.setLevel(self.options.loglevel)
+        #self.logger.setLevel(logging.DEBUG)
 
         fmt = '%(asctime)s (UTC) [ %(levelname)s ] :  %(message)s'
         formatter = logging.Formatter(fmt, '%T')
@@ -115,10 +115,10 @@ class agis(object):
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-        msg = 'Cloud: %s' % self.options.cloud.upper()
-        logging.info(msg)
-        msg = 'Activity: %s' % self.options.activity
-        logging.info(msg)
+        #msg = 'Cloud: %s' % self.options.cloud.upper()
+        #self.logger.info(msg)
+        #msg = 'Activity: %s' % self.options.activity
+        #self.logger.info(msg)
 
 
     def downloadinfo(self):
@@ -162,27 +162,27 @@ class agis(object):
             try:
 
                 if not self.__checkvalue(self.options.vo, self.d[key]['vo_name']):
-                    print "VO does not match: %s, %s" %(self.options.vo, self.d[key]['vo_name'])
+                    self.logger.debug("VO does not match: %s, %s" %(self.options.vo, self.d[key]['vo_name']) )
                     continue
 
                 if not self.__checkvalue(self.options.cloud, self.d[key]['cloud']):
-                    print "CLOUD does not match: %s, %s" %(self.options.cloud, self.d[key]['cloud'])
+                    self.logger.debug("CLOUD does not match: %s, %s" %(self.options.cloud, self.d[key]['cloud']) )
                     continue
 
                 if not self.__checkvalue(self.options.resourcetype, self.d[key]['resource_type']):
-                    print "RESOURCETYPE does not match: %s, %s" %(self.options.resourcetype, self.d[key]['resource_type'])
+                    self.logger.debug("RESOURCETYPE does not match: %s, %s" %(self.options.resourcetype, self.d[key]['resource_type']) )
                     continue
 
                 if not self.__checkvalue(self.options.activity, self.d[key]['type']):
-                    print "ACTIVITY does not match: %s, %s" %(self.options.activity, self.d[key]['type'])
+                    self.logger.debug("ACTIVITY does not match: %s, %s" %(self.options.activity, self.d[key]['type']) )
                     continue
 
                 if not self.__checkvalue(self.options.site, self.d[key]['site']):
-                    print "SITE does not match: %s, %s" %(self.options.site, self.d[key]['site'])
+                    self.logger.debug("SITE does not match: %s, %s" %(self.options.site, self.d[key]['site']) )
                     continue
 
                 if not self.__checkvalue(self.options.pandaresource, self.d[key]['panda_resource']):
-                    print "PANDARESOURCE does not match: %s, %s" %(self.options.pandaresource, self.d[key]['panda_resource'])
+                    self.logger.debug("PANDARESOURCE does not match: %s, %s" %(self.options.pandaresource, self.d[key]['panda_resource']) )
                     continue
 
 
@@ -197,7 +197,7 @@ class agis(object):
                     for q in self.d[key]['queues']:
 
                         if not self.__checkvalue(self.options.gatekeeper, q['ce_endpoint']):
-                            print "GATEKEEPER does not match: %s, %s" %(self.options.gatekeeper, q['ce_endpoint'])
+                            self.logger.debug("GATEKEEPER does not match: %s, %s" %(self.options.gatekeeper, q['ce_endpoint']) )
                             continue
 
                         if q['ce_state'] != 'ACTIVE':
