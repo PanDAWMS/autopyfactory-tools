@@ -296,6 +296,8 @@ class agis(object):
     
             except KeyError, e:
               self.logger.debug('Key error: %s' % e)
+        
+            self.outputfile.close()
 
 
 def main():
