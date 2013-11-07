@@ -297,13 +297,11 @@ class agis(object):
             except KeyError, e:
               self.logger.debug('Key error: %s' % e)
         
-            self.outputfile.close()
+            #self.outputfile.close()  # apparently this is not the right place 
 
 
 def main():
     agisobj = agis()
-    agisobj.parseinputs()
-    agisobj.setuplogging()
     agisobj.downloadinfo()
     agisobj.generateconfig()
 
