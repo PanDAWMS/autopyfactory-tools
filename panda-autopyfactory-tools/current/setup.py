@@ -38,10 +38,16 @@ utils_files = ['src/apf-agis-config',
                'src/apf-simulate-scheds',
                ]
 
+etc_files = ['etc/apf-agis-config-template.conf-example',
+            ]
+
+
+
 # -----------------------------------------------------------
 
 rpm_data_files=[ #('/etc/logrotate.d',   logrotate_files),                                        
                 ('/usr/share/apf',     utils_files),                                        
+                ('/etc/apf',           etc_files),
                ]
 
 # -----------------------------------------------------------
