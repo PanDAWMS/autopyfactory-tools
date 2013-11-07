@@ -303,8 +303,8 @@ class agis(object):
         print >> self.outputfile, 'batchsubmit.condornordugrid.nordugridrsl = %s' % self.nordugridrsl
         print >> self.outputfile, 'nordugridrsl.nordugridrsladd = %s' % rsladd
         print >> self.outputfile, 'nordugridrsl.queue = %s' % self.q['ce_queue_name']
-        print >> self.outputfile, 'nordugridrsl.addenv.RUCIO_ACCOUNT = pilot'
-        print >> self.outputfile, 'nordugridrsl.addenv.APF_PYTHON26 = 1'
+        #print >> self.outputfile, 'nordugridrsl.addenv.RUCIO_ACCOUNT = pilot'
+        #print >> self.outputfile, 'nordugridrsl.addenv.APF_PYTHON26 = 1'
 
 
 
