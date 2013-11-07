@@ -136,11 +136,6 @@ class agis(object):
         handler.setFormatter(formatter)
         self.logger.addHandler(handler)
 
-        #msg = 'Cloud: %s' % self.options.cloud.upper()
-        #self.logger.info(msg)
-        #msg = 'Activity: %s' % self.options.activity
-        #self.logger.info(msg)
-
 
     def downloadinfo(self):
 
@@ -206,8 +201,6 @@ class agis(object):
                     self.logger.debug("PANDARESOURCE does not match: %s, %s" %(self.options.pandaresource, self.d[key]['panda_resource']) )
                     continue
 
-
-
                 if self.d[key]['site_state'] == 'ACTIVE':  # ?? what should we do with this ??
     
                     wmsqueue = self.d[key]['panda_resource']
@@ -215,90 +208,48 @@ class agis(object):
                     memory = self.d[key]['memory']
                     corecount = self.d[key]['corecount']
                     
-                    for q in self.d[key]['queues']:
+                    for self.q in self.d[key]['queues']:
 
-                        if not self.__checkvalue(self.options.gatekeeper, q['ce_endpoint']):
-                            self.logger.debug("GATEKEEPER does not match: %s, %s" %(self.options.gatekeeper, q['ce_endpoint']) )
+                        if not self.__checkvalue(self.options.gatekeeper, self.q['ce_endpoint']):
+                            self.logger.debug("GATEKEEPER does not match: %s, %s" %(self.options.gatekeeper, self.q['ce_endpoint']) )
                             continue
 
-                        if q['ce_state'] != 'ACTIVE':
-                            self.logger.debug("CE not active: %s (%s)" % (q['ce_name'], q['ce_state']))
+                        if self.q['ce_state'] != 'ACTIVE':
+                            self.logger.debug("CE not active: %s (%s)" % (self.q['ce_name'], self.q['ce_state']))
                             continue
-                        gramqueue = None 
-                        nordugridrsl = None 
-                        submitplugin = None
-                        submitpluginstring = None
-                        gramqueue = None
-                        gramversion = None
-                        creamenv = None
-                        creamattr = None
+
+                        self.gramqueue = None 
+                        self.nordugridrsl = None 
+                        self.submitplugin = None
+                        self.submitpluginstring = None
+                        self.gramversion = None
+                        self.creamattr = None
                 
-                        if q['ce_flavour'] == 'LCG-CE' or q['ce_flavour'] == 'GLOBUS':
+                        if self.q['ce_flavour'] == 'LCG-CE' or self.q['ce_flavour'] == 'GLOBUS':
+                            self.__generateconfigglobus()
                 
-                            gridresource = '%s/jobmanager-%s' %(q['ce_endpoint'], q['ce_jobmanager'])
-                            if q['ce_version'] == 'GT2':
-                                submitplugin = 'CondorGT2'
-                                submitpluginstring = 'condorgt2'
-                                gramversion = 'gram2'
-                            if q['ce_version'] == 'GT5':
-                                submitplugin = 'CondorGT5'
-                                submitpluginstring = 'condorgt5'
-                                gramversion = 'gram5'
-                            if q['ce_queue_name']:
-                                gramqueue = q['ce_queue_name']
-
-                            print >> self.outputfile, 'globusrsl.%s.queue = %s' % (gramversion, gramqueue)
-                
-                        elif q['ce_flavour'] == 'CREAM-CE':
-                            gridresource = '%s/ce-cream/services/CREAM2 %s %s' %(q['ce_endpoint'], q['ce_jobmanager'], q['ce_queue_name'])
-                            submitplugin = 'CondorCREAM'
-                            submitpluginstring = 'condorcream'
-                            if corecount:
-                                creamattr = 'CpuNumber = %d' % corecount
-
-                            if wmsqueue == 'NIKHEF-ELPROD_LONG':
-                                print >> self.outputfile, 'batchsubmit.condorcream.condor_attributes = %(hold)s,%(remove)s,cream_attributes = CERequirements = "other.GlueCEPolicyMaxCPUTime >= 2520"'
-
-                            if creamattr:
-                                print >> self.outputfile, 'creamattr = %s' % creamattr
-                                print >> self.outputfile, 'batchsubmit.condorcream.condor_attributes = %(hold)s,%(remove)s,cream_attributes = %(creamattr)s'
-                            else:
-                                print >> self.outputfile, 'batchsubmit.condorcream.condor_attributes = %(hold)s,%(remove)s'
-
+                        elif self.q['ce_flavour'] == 'CREAM-CE':
+                            self.__generateconfigcream()
                             
-                        elif q['ce_flavour'] == 'ARC-CE':
-                            # ignore :port part
-                            gridresource = q['ce_endpoint'].split(':')[0]
-                            submitplugin = 'CondorNordugrid'
-                            submitpluginstring = 'condornordugrid'
-                            nordugridrsl = '(jobname = arc_pilot)'
-                            rsladd = '(runtimeenvironment = APPS/HEP/ATLAS-SITE-LCG)(runtimeenvironment = ENV/PROXY)'
-                            rsladd += '(jobname = arc_pilot)(memory = %d)' % memory
-                            if corecount:
-                                rsladd += '(count = %d)' % corecount
-
-                            print >> self.outputfile, 'batchsubmit.condornordugrid.nordugridrsl = %s' % nordugridrsl
-                            print >> self.outputfile, 'nordugridrsl.nordugridrsladd = %s' % rsladd
-                            print >> self.outputfile, 'nordugridrsl.queue = %s' % q['ce_queue_name']
-                            print >> self.outputfile, 'nordugridrsl.addenv.RUCIO_ACCOUNT = pilot'
-                            print >> self.outputfile, 'nordugridrsl.addenv.APF_PYTHON26 = 1'
+                        elif self.q['ce_flavour'] == 'ARC-CE':
+                            self.__generateconfigarc()
 
                         else:
-                            self.logger.debug("Unknown ce_flavour (%s) for %s (%s)" % (q['ce_flavour'], q['ce_name'], q['ce_queue_id']) )
+                            self.logger.debug("Unknown ce_flavour (%s) for %s (%s)" % (self.q['ce_flavour'], self.q['ce_name'], self.q['ce_queue_id']) )
                             continue
                 
                         print >> self.outputfile, ''  
-                        print >> self.outputfile, '[%s-%s]' % (self.d[key]['nickname'], q['ce_queue_id'])
+                        print >> self.outputfile, '[%s-%s]' % (self.d[key]['nickname'], self.q['ce_queue_id'])
                         print >> self.outputfile, 'batchqueue = %s' % key
                         print >> self.outputfile, 'wmsqueue = %s' % wmsqueue
-                        print >> self.outputfile, 'batchsubmitplugin = %s' % submitplugin
-                        print >> self.outputfile, 'batchsubmit.%s.gridresource = %s' % (submitpluginstring, gridresource)
+                        print >> self.outputfile, 'batchsubmitplugin = %s' % self.submitplugin
+                        print >> self.outputfile, 'batchsubmit.%s.gridresource = %s' % (self.submitpluginstring, self.gridresource)
 
                         if cetype == 'analysis':
-                            print >> self.outputfile, 'batchsubmit.%s.proxy = atlas-analysis' % submitpluginstring
+                            print >> self.outputfile, 'batchsubmit.%s.proxy = atlas-analysis' % self.submitpluginstring
                             print >> self.outputfile, 'executable.arguments = %(executable.defaultarguments)s -u user'
                         elif cetype == 'production':
-                            print >> self.outputfile, 'batchsubmit.%s.proxy = atlas-production' % submitpluginstring
+                            print >> self.outputfile, 'batchsubmit.%s.proxy = atlas-production' % self.submitpluginstring
                             print >> self.outputfile, 'executable.arguments = %(executable.defaultarguments)s'
     
     
@@ -308,10 +259,58 @@ class agis(object):
         self.outputfile.close()
 
 
+    def __generateconfigglobus(self):
+
+        self.gridresource = '%s/jobmanager-%s' %(self.q['ce_endpoint'], self.q['ce_jobmanager'])
+        if self.q['ce_version'] == 'GT2':
+            self.submitplugin = 'CondorGT2'
+            self.submitpluginstring = 'condorgt2'
+            self.gramversion = 'gram2'
+        if self.q['ce_version'] == 'GT5':
+            self.submitplugin = 'CondorGT5'
+            self.submitpluginstring = 'condorgt5'
+            self.gramversion = 'gram5'
+        if self.q['ce_queue_name']:
+            self.gramqueue = self.q['ce_queue_name']
+        print >> self.outputfile, 'globusrsl.%s.queue = %s' % (self.gramversion, self.gramqueue)
+
+    def __generateconfigcream(self):
+
+        self.gridresource = '%s/ce-cream/services/CREAM2 %s %s' %(self.q['ce_endpoint'], self.q['ce_jobmanager'], self.q['ce_queue_name'])
+        self.submitplugin = 'CondorCREAM'
+        self.submitpluginstring = 'condorcream'
+        if corecount:
+            self.creamattr = 'CpuNumber = %d' % corecount
+        if wmsqueue == 'NIKHEF-ELPROD_LONG':
+            print >> self.outputfile, 'batchsubmit.condorcream.condor_attributes = %(hold)s,%(remove)s,cream_attributes = CERequirements = "other.GlueCEPolicyMaxCPUTime >= 2520"'
+        if self.creamattr:
+            print >> self.outputfile, 'creamattr = %s' % self.creamattr
+            print >> self.outputfile, 'batchsubmit.condorcream.condor_attributes = %(hold)s,%(remove)s,cream_attributes = %(creamattr)s'
+        else:
+            print >> self.outputfile, 'batchsubmit.condorcream.condor_attributes = %(hold)s,%(remove)s'
+
+    def __generateconfigarc(self):
+
+        # ignore :port part
+        self.gridresource = self.q['ce_endpoint'].split(':')[0]
+        self.submitplugin = 'CondorNordugrid'
+        self.submitpluginstring = 'condornordugrid'
+        self.nordugridrsl = '(jobname = arc_pilot)'
+        rsladd = '(runtimeenvironment = APPS/HEP/ATLAS-SITE-LCG)(runtimeenvironment = ENV/PROXY)'
+        rsladd += '(jobname = arc_pilot)(memory = %d)' % memory
+        if corecount:
+            rsladd += '(count = %d)' % corecount
+        print >> self.outputfile, 'batchsubmit.condornordugrid.nordugridrsl = %s' % self.nordugridrsl
+        print >> self.outputfile, 'nordugridrsl.nordugridrsladd = %s' % rsladd
+        print >> self.outputfile, 'nordugridrsl.queue = %s' % self.q['ce_queue_name']
+        print >> self.outputfile, 'nordugridrsl.addenv.RUCIO_ACCOUNT = pilot'
+        print >> self.outputfile, 'nordugridrsl.addenv.APF_PYTHON26 = 1'
+
+
+
+
 def main():
     agisobj = agis()
-    #agisobj.parseinputs()
-    #agisobj.setuplogging()
     agisobj.downloadinfo()
     agisobj.generateconfig()
 
