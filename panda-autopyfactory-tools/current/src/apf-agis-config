@@ -67,7 +67,7 @@ class agis(object):
                           action="store",
                           default=None,
                           type="string",
-                          help="LCG sitename, AGIS rc_site")
+                          help="LCG sitename, AGIS site")
     
         parser.add_option("--pandaresource",
                           dest="pandaresource",
@@ -177,8 +177,8 @@ class agis(object):
                     print "ACTIVITY does not match: %s, %s" %(self.options.activity, self.d[key]['type'])
                     continue
 
-                if not self.__checkvalue(self.options.site, self.d[key]['rc_site']):
-                    print "SITE does not match: %s, %s" %(self.options.site, self.d[key]['rc_site'])
+                if not self.__checkvalue(self.options.site, self.d[key]['site']):
+                    print "SITE does not match: %s, %s" %(self.options.site, self.d[key]['site'])
                     continue
 
                 if not self.__checkvalue(self.options.pandaresource, self.d[key]['panda_resource']):
