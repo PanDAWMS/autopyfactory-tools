@@ -6,6 +6,7 @@ Output a factory config file only outputs ACTIVE sites
 
 import logging
 import sys
+import time
 
 from ConfigParser import SafeConfigParser
 from optparse import OptionParser
@@ -100,16 +101,20 @@ class agis(object):
     
 
     def setuplogging(self):
-    
-        logger = logging.getLogger()
-        logger.setLevel(self.options.loglevel)
-        fmt = '[APF:%(levelname)s %(asctime)s] %(message)s'
+
+        self.logger = logging.getLogger()
+
+        #self.logger.setLevel(logging.DEBUG)
+        self.logger.setLevel(self.options.loglevel)
+
+        fmt = '%(asctime)s (UTC) [ %(levelname)s ] :  %(message)s'
         formatter = logging.Formatter(fmt, '%T')
-        handler = logging.StreamHandler(sys.stdout)
+        formatter.converter = time.gmtime  # to convert timestamps to UTC
+
+        handler = logging.FileHandler('apf-agis-config.log')
         handler.setFormatter(formatter)
-        logger.handlers = []
-        logger.addHandler(handler)
-        
+        self.logger.addHandler(handler)
+
         msg = 'Cloud: %s' % self.options.cloud.upper()
         logging.info(msg)
         msg = 'Activity: %s' % self.options.activity
