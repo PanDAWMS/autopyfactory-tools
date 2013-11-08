@@ -22,9 +22,12 @@ except ImportError, err:
 
 class agis(object):
 
-    def __init__(self):
+    def __init__(self, inputs):
+        """
+        inputs is a list with input options, i.e. sys.argv[1:]
+        """
     
-        self.parseinputs()
+        self.parseinputs(inputs)
         self.setuplogging()
     
         self.outputfile = open(self.options.outputfilename, 'w')
@@ -33,7 +36,7 @@ class agis(object):
         self.defaultsection = self.template.read()
 
 
-    def parseinputs(self):
+    def parseinputs(self, inputs):
     
         parser = OptionParser(usage='''%prog [OPTIONS]
             Output a factory queue configuration using ACTIVE sites from the
@@ -118,7 +121,7 @@ class agis(object):
                           const=logging.INFO,
                           help="Set logging level to INFO [default WARNING]")
     
-        (self.options, args) = parser.parse_args()
+        (self.options, args) = parser.parse_args(inputs)
     
 
     def setuplogging(self):
@@ -310,7 +313,7 @@ class agis(object):
 
 
 def main():
-    agisobj = agis()
+    agisobj = agis(sys.argv[1:])
     agisobj.downloadinfo()
     agisobj.generateconfig()
 
