@@ -35,6 +35,24 @@ class agis(object):
         self.template = open(self.options.templateconf)
         self.defaultsection = self.template.read()
 
+        #       
+        #       from ConfigParser import SafeConfigParser
+        #       
+        #       conf = SafeConfigParser()
+        #       conf.readfp(open('conf'))
+        #       
+        #       print
+        #       print conf.defaults()
+        #       print
+        #       secs = conf._sections
+        #       print secs
+        #       print
+        #       for sec in secs.keys():
+        #           for key in secs[sec]:
+        #               if key != '__name__':
+        #                   value = secs[sec][key]
+        #                   print sec, key, value
+        #       
 
     def parseinputs(self, inputs):
     
