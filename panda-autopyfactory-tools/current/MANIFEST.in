@@ -1,2 +1,2 @@
-include CHANGELOG LICENSE 
+include CHANGELOG LICENSE README
 include src/*
