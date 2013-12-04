@@ -15,7 +15,7 @@ from distutils.core import setup
 from distutils.command.install import install as install_org
 from distutils.command.install_data import install_data as install_data_org
 
-# Python version check. 
+## Python version check. 
 #major, minor, release, st, num = sys.version_info
 #if major == 2:
 #    if not minor >= 4:
@@ -26,8 +26,6 @@ from distutils.command.install_data import install_data as install_data_org
 #                D A T A     F I L E S 
 # ===========================================================
 
-
-###logrotate_files = ['etc/factory.logrotate',]
 
 utils_files = ['src/apf-agis-config',
                'src/apf-queue-status',
@@ -45,8 +43,7 @@ etc_files = ['etc/apf-agis-config-template.conf-example',
 
 # -----------------------------------------------------------
 
-rpm_data_files=[ #('/etc/logrotate.d',   logrotate_files),                                        
-                ('/usr/share/apf',     utils_files),                                        
+rpm_data_files=[('/usr/share/apf',     utils_files),                                        
                 ('/etc/apf',           etc_files),
                ]
 
