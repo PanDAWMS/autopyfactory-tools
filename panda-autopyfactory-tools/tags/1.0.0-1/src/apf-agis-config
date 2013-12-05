@@ -224,10 +224,10 @@ class agis(object):
 
                 if self.d[key]['site_state'] == 'ACTIVE':  # ?? what should we do with this ??
     
-                    wmsqueue = self.d[key]['panda_resource']
+                    self.wmsqueue = self.d[key]['panda_resource']
                     cetype = self.d[key]['type']
-                    memory = self.d[key]['memory']
-                    corecount = self.d[key]['corecount']
+                    self.memory = self.d[key]['memory']
+                    self.corecount = self.d[key]['corecount']
                     
                     for self.q in self.d[key]['queues']:
 
@@ -262,7 +262,7 @@ class agis(object):
                         print >> self.outputfile, ''  
                         print >> self.outputfile, '[%s-%s]' % (self.d[key]['nickname'], self.q['ce_queue_id'])
                         print >> self.outputfile, 'batchqueue = %s' % key
-                        print >> self.outputfile, 'wmsqueue = %s' % wmsqueue
+                        print >> self.outputfile, 'wmsqueue = %s' % self.wmsqueue
                         print >> self.outputfile, 'batchsubmitplugin = %s' % self.submitplugin
                         print >> self.outputfile, 'batchsubmit.%s.gridresource = %s' % (self.submitpluginstring, self.gridresource)
 
@@ -300,9 +300,9 @@ class agis(object):
         self.gridresource = '%s/ce-cream/services/CREAM2 %s %s' %(self.q['ce_endpoint'], self.q['ce_jobmanager'], self.q['ce_queue_name'])
         self.submitplugin = 'CondorCREAM'
         self.submitpluginstring = 'condorcream'
-        if corecount:
-            self.creamattr = 'CpuNumber = %d' % corecount
-        if wmsqueue == 'NIKHEF-ELPROD_LONG':
+        if self.corecount:
+            self.creamattr = 'CpuNumber = %d' % self.corecount
+        if self.wmsqueue == 'NIKHEF-ELPROD_LONG':
             print >> self.outputfile, 'batchsubmit.condorcream.condor_attributes = %(hold)s,%(remove)s,cream_attributes = CERequirements = "other.GlueCEPolicyMaxCPUTime >= 2520"'
         if self.creamattr:
             print >> self.outputfile, 'creamattr = %s' % self.creamattr
@@ -318,9 +318,9 @@ class agis(object):
         self.submitpluginstring = 'condornordugrid'
         self.nordugridrsl = '(jobname = arc_pilot)'
         rsladd = '(runtimeenvironment = APPS/HEP/ATLAS-SITE-LCG)(runtimeenvironment = ENV/PROXY)'
-        rsladd += '(jobname = arc_pilot)(memory = %d)' % memory
-        if corecount:
-            rsladd += '(count = %d)' % corecount
+        rsladd += '(jobname = arc_pilot)(memory = %d)' % self.memory
+        if self.corecount:
+            rsladd += '(count = %d)' % self.corecount
         print >> self.outputfile, 'batchsubmit.condornordugrid.nordugridrsl = %s' % self.nordugridrsl
         print >> self.outputfile, 'nordugridrsl.nordugridrsladd = %s' % rsladd
         print >> self.outputfile, 'nordugridrsl.queue = %s' % self.q['ce_queue_name']
