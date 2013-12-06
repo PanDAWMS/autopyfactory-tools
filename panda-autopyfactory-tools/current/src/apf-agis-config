@@ -138,6 +138,13 @@ class agis(object):
                           action="store_const",
                           const=logging.INFO,
                           help="Set logging level to INFO [default WARNING]")
+
+        parser.add_option("--debug",
+                          dest="loglevel",
+                          default=logging.DEBUG,
+                          action="store_const",
+                          const=logging.DEBUG,
+                          help="Set logging level to DEBUG [default WARNING]")
     
         (self.options, args) = parser.parse_args(inputs)
     
@@ -183,7 +190,7 @@ class agis(object):
             return True
         
         if opt:
-            if opt == agisvalue:
+            if opt.lower() == agisvalue.lower():
                 return True
             else:
                 return False    
@@ -227,6 +234,8 @@ class agis(object):
                     self.wmsqueue = self.d[key]['panda_resource']
                     cetype = self.d[key]['type']
                     self.memory = self.d[key]['memory']
+                    self.maxmemory = self.d[key]['maxmemory']
+                    self.maxtime = self.d[key]['maxtime']
                     self.corecount = self.d[key]['corecount']
                     
                     for self.q in self.d[key]['queues']:
@@ -318,14 +327,22 @@ class agis(object):
         self.submitpluginstring = 'condornordugrid'
         self.nordugridrsl = '(jobname = arc_pilot)'
         rsladd = '(runtimeenvironment = APPS/HEP/ATLAS-SITE-LCG)(runtimeenvironment = ENV/PROXY)'
-        rsladd += '(jobname = arc_pilot)(memory = %d)' % self.memory
+        rsladd += '(jobname = arc_pilot)'
+        if self.memory:
+            rsladd += '(memory = %d)' % self.memory
         if self.corecount:
             rsladd += '(count = %d)' % self.corecount
+            rsladd += '(countpernode = %d)' % self.corecount
+        if self.maxmemory and self.corecount:
+            percore = self.maxmemory/self.corecount
+            rsladd += '(maxmemory = %d)' % percore
+        if self.maxtime:
+            rsladd += '(wallTime = %d)' % self.maxtime
         print >> self.outputfile, 'batchsubmit.condornordugrid.nordugridrsl = %s' % self.nordugridrsl
         print >> self.outputfile, 'nordugridrsl.nordugridrsladd = %s' % rsladd
         print >> self.outputfile, 'nordugridrsl.queue = %s' % self.q['ce_queue_name']
-        #print >> self.outputfile, 'nordugridrsl.addenv.RUCIO_ACCOUNT = pilot'
-        #print >> self.outputfile, 'nordugridrsl.addenv.APF_PYTHON26 = 1'
+        print >> self.outputfile, 'nordugridrsl.addenv.RUCIO_ACCOUNT = pilot'
+        print >> self.outputfile, 'nordugridrsl.addenv.APF_PYTHON26 = 1'
 
 
 
