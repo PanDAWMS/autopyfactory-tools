@@ -1,0 +1,356 @@
+#!/usr/bin/env python 
+
+"""
+Output a factory config file only outputs ACTIVE sites
+"""
+
+import logging
+import sys
+import time
+
+from ConfigParser import SafeConfigParser
+from optparse import OptionParser
+from urllib import urlopen
+
+try:
+    import json as json
+except ImportError, err:
+    import simplejson as json
+
+
+
+
+class agis(object):
+
+    def __init__(self, inputs):
+        """
+        inputs is a list with input options, i.e. sys.argv[1:]
+        """
+    
+        self.parseinputs(inputs)
+        self.setuplogging()
+    
+        self.outputfile = open(self.options.outputfilename, 'w')
+
+        self.template = open(self.options.templateconf)
+        self.defaultsection = self.template.read()
+
+        #       
+        #       from ConfigParser import SafeConfigParser
+        #       
+        #       conf = SafeConfigParser()
+        #       conf.readfp(open('conf'))
+        #       
+        #       print
+        #       print conf.defaults()
+        #       print
+        #       secs = conf._sections
+        #       print secs
+        #       print
+        #       for sec in secs.keys():
+        #           for key in secs[sec]:
+        #               if key != '__name__':
+        #                   value = secs[sec][key]
+        #                   print sec, key, value
+        #       
+
+    def parseinputs(self, inputs):
+    
+        parser = OptionParser(usage='''%prog [OPTIONS]
+            Output a factory queue configuration using ACTIVE sites from the
+            specified cloud and activity type.
+            ''')
+    
+        parser.add_option("--conf",
+                          dest="templateconf",
+                          action="store",
+                          default=None,
+                          type="string",
+                          help="template config file")
+
+        parser.add_option("--output",
+                          dest="outputfilename",
+                          action="store",
+                          default="queues.conf-agis",
+                          type="string",
+                          help="output filename")
+
+        parser.add_option("--vo",
+                          dest="vo",
+                          action="store",
+                          default=None,
+                          type="string",
+                          help="VO name")
+    
+        parser.add_option("--cloud",
+                          dest="cloud",
+                          action="store",
+                          default=None,
+                          type="string",
+                          help="name of cloud")
+    
+        parser.add_option("--resourcetype",
+                          dest="resourcetype",
+                          action="store",
+                          default=None,
+                          type="string",
+                          help="AGIS resource_type")
+
+        parser.add_option("--activity",
+                          dest="activity",
+                          default=None,
+                          action="store",
+                          type="choice",
+                          choices=['analysis','production'],
+                          help="activity filter ('analysis' [default] or 'production')")
+    
+        parser.add_option("--site",
+                          dest="site",
+                          action="store",
+                          default=None,
+                          type="string",
+                          help="LCG sitename, AGIS site")
+    
+        parser.add_option("--pandaresource",
+                          dest="pandaresource",
+                          action="store",
+                          default=None,
+                          type="string",
+                          help="AGIS panda_resource")
+
+        parser.add_option("--gatekeeper",
+                          dest="gatekeeper",
+                          action="store",
+                          default=None,
+                          type="string",
+                          help="AGIS ce_name (or maybe the ce_endpoint ??? )")
+    
+        parser.add_option("--quiet",
+                          dest="loglevel",
+                          default=logging.WARNING,
+                          action="store_const",
+                          const=logging.WARNING,
+                          help="Set logging level to WARNING [default]")
+    
+        parser.add_option("--info",
+                          dest="loglevel",
+                          default=logging.WARNING,
+                          action="store_const",
+                          const=logging.INFO,
+                          help="Set logging level to INFO [default WARNING]")
+
+        parser.add_option("--debug",
+                          dest="loglevel",
+                          default=logging.DEBUG,
+                          action="store_const",
+                          const=logging.DEBUG,
+                          help="Set logging level to DEBUG [default WARNING]")
+    
+        (self.options, args) = parser.parse_args(inputs)
+    
+
+    def setuplogging(self):
+
+        self.logger = logging.getLogger()
+
+        self.logger.setLevel(self.options.loglevel)
+        #self.logger.setLevel(logging.DEBUG)
+
+        fmt = '%(asctime)s (UTC) [ %(levelname)s ] :  %(message)s'
+        formatter = logging.Formatter(fmt, '%T')
+        formatter.converter = time.gmtime  # to convert timestamps to UTC
+
+        handler = logging.FileHandler('apf-agis-config.log')
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+
+
+    def downloadinfo(self):
+
+        url = 'http://atlas-agis-api.cern.ch/request/pandaqueue/query/list/?json&preset=schedconf.all'
+        if self.options.cloud.upper():
+            url += '&cloud=%s' % self.options.cloud.upper()
+        logging.info(url)
+    
+        handle = urlopen(url)
+        self.d = json.load(handle, 'utf-8')
+        handle.close()
+    
+
+    def __checkvalue(self, opt, agisvalue):
+        """
+        opt is the value provided by the user thru the command line
+        agisvalue is the value in AGIS
+
+        -- if opt is None, or "", which means the user does not care, return True
+        -- if opt has a value, return True if matches the AGIS value
+        """
+
+        if not opt:
+            return True
+        
+        if opt:
+            if opt.lower() == agisvalue.lower():
+                return True
+            else:
+                return False    
+
+
+    def generateconfig(self):
+
+        print >> self.outputfile, "# auto-generated by: apf-agis-config  %s" % ' '.join(sys.argv[1:])
+    
+        print >> self.outputfile, self.defaultsection
+        
+        for key in sorted(self.d):
+            try:
+
+                if not self.__checkvalue(self.options.vo, self.d[key]['vo_name']):
+                    self.logger.debug("VO does not match: %s, %s" %(self.options.vo, self.d[key]['vo_name']) )
+                    continue
+
+                if not self.__checkvalue(self.options.cloud, self.d[key]['cloud']):
+                    self.logger.debug("CLOUD does not match: %s, %s" %(self.options.cloud, self.d[key]['cloud']) )
+                    continue
+
+                if not self.__checkvalue(self.options.resourcetype, self.d[key]['resource_type']):
+                    self.logger.debug("RESOURCETYPE does not match: %s, %s" %(self.options.resourcetype, self.d[key]['resource_type']) )
+                    continue
+
+                if not self.__checkvalue(self.options.activity, self.d[key]['type']):
+                    self.logger.debug("ACTIVITY does not match: %s, %s" %(self.options.activity, self.d[key]['type']) )
+                    continue
+
+                if not self.__checkvalue(self.options.site, self.d[key]['site']):
+                    self.logger.debug("SITE does not match: %s, %s" %(self.options.site, self.d[key]['site']) )
+                    continue
+
+                if not self.__checkvalue(self.options.pandaresource, self.d[key]['panda_resource']):
+                    self.logger.debug("PANDARESOURCE does not match: %s, %s" %(self.options.pandaresource, self.d[key]['panda_resource']) )
+                    continue
+
+                if self.d[key]['site_state'] == 'ACTIVE':  # ?? what should we do with this ??
+    
+                    self.wmsqueue = self.d[key]['panda_resource']
+                    cetype = self.d[key]['type']
+                    self.memory = self.d[key]['memory']
+                    self.maxmemory = self.d[key]['maxmemory']
+                    self.maxtime = self.d[key]['maxtime']
+                    self.corecount = self.d[key]['corecount']
+                    
+                    for self.q in self.d[key]['queues']:
+
+                        if not self.__checkvalue(self.options.gatekeeper, self.q['ce_endpoint']):
+                            self.logger.debug("GATEKEEPER does not match: %s, %s" %(self.options.gatekeeper, self.q['ce_endpoint']) )
+                            continue
+
+                        if self.q['ce_state'] != 'ACTIVE':
+                            self.logger.debug("CE not active: %s (%s)" % (self.q['ce_name'], self.q['ce_state']))
+                            continue
+
+                        self.gramqueue = None 
+                        self.nordugridrsl = None 
+                        self.submitplugin = None
+                        self.submitpluginstring = None
+                        self.gramversion = None
+                        self.creamattr = None
+                
+                        if self.q['ce_flavour'] == 'LCG-CE' or self.q['ce_flavour'] == 'GLOBUS':
+                            self.__generateconfigglobus()
+                
+                        elif self.q['ce_flavour'] == 'CREAM-CE':
+                            self.__generateconfigcream()
+                            
+                        elif self.q['ce_flavour'] == 'ARC-CE':
+                            self.__generateconfigarc()
+
+                        else:
+                            self.logger.debug("Unknown ce_flavour (%s) for %s (%s)" % (self.q['ce_flavour'], self.q['ce_name'], self.q['ce_queue_id']) )
+                            continue
+                
+                        print >> self.outputfile, ''  
+                        print >> self.outputfile, '[%s-%s]' % (self.d[key]['nickname'], self.q['ce_queue_id'])
+                        print >> self.outputfile, 'batchqueue = %s' % key
+                        print >> self.outputfile, 'wmsqueue = %s' % self.wmsqueue
+                        print >> self.outputfile, 'batchsubmitplugin = %s' % self.submitplugin
+                        print >> self.outputfile, 'batchsubmit.%s.gridresource = %s' % (self.submitpluginstring, self.gridresource)
+
+                        if cetype == 'analysis':
+                            print >> self.outputfile, 'batchsubmit.%s.proxy = atlas-analysis' % self.submitpluginstring
+                            print >> self.outputfile, 'executable.arguments = %(executable.defaultarguments)s -u user'
+                        elif cetype == 'production':
+                            print >> self.outputfile, 'batchsubmit.%s.proxy = atlas-production' % self.submitpluginstring
+                            print >> self.outputfile, 'executable.arguments = %(executable.defaultarguments)s'
+    
+    
+            except KeyError, e:
+              self.logger.debug('Key error: %s' % e)
+        
+        self.outputfile.close()
+
+
+    def __generateconfigglobus(self):
+
+        self.gridresource = '%s/jobmanager-%s' %(self.q['ce_endpoint'], self.q['ce_jobmanager'])
+        if self.q['ce_version'] == 'GT2':
+            self.submitplugin = 'CondorGT2'
+            self.submitpluginstring = 'condorgt2'
+            self.gramversion = 'gram2'
+        if self.q['ce_version'] == 'GT5':
+            self.submitplugin = 'CondorGT5'
+            self.submitpluginstring = 'condorgt5'
+            self.gramversion = 'gram5'
+        if self.q['ce_queue_name']:
+            self.gramqueue = self.q['ce_queue_name']
+        print >> self.outputfile, 'globusrsl.%s.queue = %s' % (self.gramversion, self.gramqueue)
+
+    def __generateconfigcream(self):
+
+        self.gridresource = '%s/ce-cream/services/CREAM2 %s %s' %(self.q['ce_endpoint'], self.q['ce_jobmanager'], self.q['ce_queue_name'])
+        self.submitplugin = 'CondorCREAM'
+        self.submitpluginstring = 'condorcream'
+        if self.corecount:
+            self.creamattr = 'CpuNumber = %d' % self.corecount
+        if self.wmsqueue == 'NIKHEF-ELPROD_LONG':
+            print >> self.outputfile, 'batchsubmit.condorcream.condor_attributes = %(hold)s,%(remove)s,cream_attributes = CERequirements = "other.GlueCEPolicyMaxCPUTime >= 2520"'
+        if self.creamattr:
+            print >> self.outputfile, 'creamattr = %s' % self.creamattr
+            print >> self.outputfile, 'batchsubmit.condorcream.condor_attributes = %(hold)s,%(remove)s,cream_attributes = %(creamattr)s'
+        else:
+            print >> self.outputfile, 'batchsubmit.condorcream.condor_attributes = %(hold)s,%(remove)s'
+
+    def __generateconfigarc(self):
+
+        # ignore :port part
+        self.gridresource = self.q['ce_endpoint'].split(':')[0]
+        self.submitplugin = 'CondorNordugrid'
+        self.submitpluginstring = 'condornordugrid'
+        self.nordugridrsl = '(jobname = arc_pilot)'
+        rsladd = '(runtimeenvironment = APPS/HEP/ATLAS-SITE-LCG)(runtimeenvironment = ENV/PROXY)'
+        rsladd += '(jobname = arc_pilot)'
+        if self.memory:
+            rsladd += '(memory = %d)' % self.memory
+        if self.corecount:
+            rsladd += '(count = %d)' % self.corecount
+            rsladd += '(countpernode = %d)' % self.corecount
+        if self.maxmemory and self.corecount:
+            percore = self.maxmemory/self.corecount
+            rsladd += '(maxmemory = %d)' % percore
+        if self.maxtime:
+            rsladd += '(wallTime = %d)' % self.maxtime
+        print >> self.outputfile, 'batchsubmit.condornordugrid.nordugridrsl = %s' % self.nordugridrsl
+        print >> self.outputfile, 'nordugridrsl.nordugridrsladd = %s' % rsladd
+        print >> self.outputfile, 'nordugridrsl.queue = %s' % self.q['ce_queue_name']
+        print >> self.outputfile, 'nordugridrsl.addenv.RUCIO_ACCOUNT = pilot'
+        print >> self.outputfile, 'nordugridrsl.addenv.APF_PYTHON26 = 1'
+
+
+
+
+def main():
+    agisobj = agis(sys.argv[1:])
+    agisobj.downloadinfo()
+    agisobj.generateconfig()
+
+if __name__ == "__main__":
+    sys.exit(main())
