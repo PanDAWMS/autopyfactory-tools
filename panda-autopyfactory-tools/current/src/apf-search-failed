@@ -1,5 +1,18 @@
 #!/usr/bin/python
 
+"""
+This tool searches for a given pattern in condor logs files.
+The pattern is supposed to be a meaningful error string, typically "FAILED".
+All lines including the searching string will be displayed.
+The output can be in simple ASCII or a nice HTML format. 
+The configuration is read from config file  /etc/apf/apf-search-failed.conf
+
+NOTE: this tool must be used with caution, since the 'grep' command can be 
+      very CPU consuming, and it will be running on the factory host,
+      which is a top priority service. 
+"""
+
+
 import os
 import commands
 import threading
@@ -9,38 +22,26 @@ import time
 
 import getopt
 
+from ConfigParser import SafeConfigParser
+
+# ----------------
+
+config = SafeConfigParser()
+config.readfp(open('/etc/apf/apf-search-failed.conf'))
+
+STRING = config.get('CONFIG', 'STRING')
+FORMAT = config.get('CONFIG', 'FORMAT')
+NHOURS = config.get('CONFIG', 'NHOURS')
+BASEDIR = config.get('CONFIG', 'BASEDIR')
+
+#STRING=STRING.replace(' ','\ ')
+#STRING=STRING.replace(':','\:')
+
+# ----------------
+
 NOW = int(time.time())
 
-# --- DEFAULTS ---
-
-STRING = "FAILED"
-FORMAT = "html"
-NHOURS = 1
-BASEDIR = "/home/apf/factory/logs"
-
-
-opts, args = getopt.getopt(sys.argv[1:], "",
-              ["string=",
-               "format=",
-               "time=",
-               "basedir="]
-              ) 
-
-for k,v in opts:
-    if k == "--string":
-        STRING = v
-    if k == "--format":
-        FORMAT = v
-    if k == "--time":
-        NHOURS = int(v)
-    if k == "--basedir":
-        BASEDIR = v
-    
-STRING=STRING.replace(' ','\ ')
-STRING=STRING.replace(':','\:')
-
-
-class CMD(threading.Thread):
+class Search(threading.Thread):
         def __init__(self, dir):
                 threading.Thread.__init__(self)
                 self.dir = dir
@@ -55,7 +56,6 @@ class CMD(threading.Thread):
             if listfiles != "":
 
                 cmd = 'egrep -H "%s" %s' %(STRING, listfiles)
-                #print cmd
                 self.out = commands.getoutput(cmd)  
             else:
                 self.out = ""   
@@ -69,7 +69,7 @@ class Dir(object):
 
     def abs(self):
         return '%s/%s/%s' %(self.dir, self.date, self.apfqueue)
-    def relatve(self):
+    def relative(self):
         return '%s/%s' %(self.date, self.apfqueue)
 
 
@@ -88,7 +88,7 @@ for DATE in DATES:
 
 
 for DIR in DIRS:
-        t = CMD(DIR.abs())
+        t = Search(DIR.abs())
         threads[DIR] = t
         t.start()
 
