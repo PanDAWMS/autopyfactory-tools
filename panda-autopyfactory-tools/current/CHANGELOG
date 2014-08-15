@@ -1,4 +1,8 @@
 
+* fixed apf-simulate-scheds
+
+---------------------------------------------------
+
 * apf-search-failed gets the input options from a config file instead of command line
   apf-search-failed.conf-exampled added to etc/ directory
 
