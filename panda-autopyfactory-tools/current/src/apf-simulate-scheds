@@ -86,11 +86,11 @@ class batch(object):
 
 
 class wmsstatus_plugin(object):
-    def getInfo(self, maxtime=0):
+    def getInfo(self, queue="",  maxtime=0):
         return wmsinfo()
 
 class batchstatus_plugin(object):
-    def getInfo(self, maxtime=0):
+    def getInfo(self, queue="", maxtime=0):
         batchinfo = {}
         batchinfo[section_name] = batch()
         return batchinfo
