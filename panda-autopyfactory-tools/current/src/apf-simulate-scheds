@@ -128,7 +128,7 @@ apf = apfqueue()
 # -------------------------------------------------------------------------------------------------
 
 scheds = []
-scheds_names = conf.get(section_name, 'sched').split(',')
+scheds_names = conf.get(section_name, 'schedplugin').split(',')
 scheds_names = [name.strip() for name in scheds_names]
 for name in scheds_names:
     plugin_module_name = '%sSchedPlugin' %name
