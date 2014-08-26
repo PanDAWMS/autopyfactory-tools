@@ -47,32 +47,15 @@ section_name = conf.sections()[0]
 #           MOCKS
 # -------------------------------------------------------------------------------------------------
 
-class sitedic(object):
-    def __init__(self):
-        self.ready = activated 
-
-
 class sitestatus(object):
     def __init__(self):
         self.status = status
         self.cloud = section_name 
-siteinfo = {}
-siteinfo[section_name] = sitestatus()
 
-class cloudstatus(object):
-    def __init__(self):
-        self.status = status
-cloudinfo = {}
-cloudinfo[section_name] = cloudstatus()
 
 class wmsinfo(object):
     def __init__(self):
-        self.jobs = {}
-        self.jobs[section_name] = sitedic()
-        self.wmsqueue = section_name 
         self.ready = activated
-        self.site = siteinfo
-        self.cloud = cloudinfo
 
     def valid(self):
         return True
@@ -96,13 +79,7 @@ class wmsstatus_plugin(object):
 
 class batchstatus_plugin(object):
     def getInfo(self, queue="", maxtime=0):
-        #batchinfo = {}
-        #batchinfo[section_name] = batch()
-        #return batchinfo
-        b = batch()
-        b.pending = pending
-        b.running = running
-        return b
+        return batch()
 
 
 
@@ -179,4 +156,6 @@ for sched in scheds:
 print ''
 print 'Final output %s' %n
 print ''
+
+
 
