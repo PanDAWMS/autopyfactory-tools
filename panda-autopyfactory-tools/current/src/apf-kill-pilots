@@ -27,7 +27,7 @@ for o, a in opts:
     if o == '--queue':
         queue = a
     if o == '--status':
-        status = int(a)
+        status = a
 
 # -------------------------------------------------------------------------------------------------
 #           QUERY CONDOR
@@ -47,11 +47,12 @@ out = commands.getoutput(cmd)
 # -------------------------------------------------------------------------------------------------
 
 for pilot in out.split('\n'):
-    p_queue = pilot.split()[0]
-    p_jobstatus = pilot.split()[1]
-    p_cluster = pilot.split()[2]
-
-    if p_queue == queue and p_jobstatus == status:
-        commands.getoutput('condor_rm %s' %p_cluster)
+    fields = pilot.split()
+    if len(fields) == 3:
+        p_queue = fields[0]
+        p_jobstatus = fields[1]
+        p_cluster = fields[2]
+        if p_queue == queue and p_jobstatus == status:
+            commands.getoutput('condor_rm %s' %p_cluster)
         
 
