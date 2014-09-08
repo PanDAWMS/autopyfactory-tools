@@ -1,5 +1,14 @@
 #!/bin/bash 
 
+# 
+#  this script is supposed to be place underneath
+#       /etc/cron.hourly
+#  for example.
+#
+#  Actual script  apf-search-failed accepts input options
+#   
+
+
 # first, do file rotation
 /usr/sbin/logrotate -f -s /dev/null /etc/apf/logsmonitor.rotate.conf
 
