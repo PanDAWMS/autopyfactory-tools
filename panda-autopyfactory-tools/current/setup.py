@@ -43,8 +43,8 @@ etc_files = ['etc/apf-agis-config-template.conf-example',
 
 # -----------------------------------------------------------
 
-rpm_data_files=[('/usr/share/apf',     utils_files),                                        
-                ('/etc/apf',           etc_files),
+rpm_data_files=[('/usr/share/autopyfactory', utils_files),                                        
+                ('/etc/autopyfactory',       etc_files),
                ]
 
 # -----------------------------------------------------------
