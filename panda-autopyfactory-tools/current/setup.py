@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 #
-# Setup prog for autopyfactory
+# Setup prog for autopyfactory-tools
 #
 #
 
-release_version='1.0.1'
+release_version='1.0.2'
 
 import commands
 import os
