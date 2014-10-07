@@ -1,0 +1,19 @@
+initial content of this directory (*) are all files deleted from autopyfactory/trunk/misc/
+
+(*)
+apf-agis-config
+apf-agis-queuedata.py
+apf-check-old-pilots
+apf-panda-jobs-info.py
+apf-queue-jobs-by-status.sh
+apf-queue-status
+apfqueue_status.sh
+apf-search-failed
+apf-simulate-scheds
+apf-test-pandaclient
+change_enabled.py
+condor_q_long.xml
+condor_status_long.xml
+publish-rpms.py
+reverse-log-dirs.py
+test-pandamon.py

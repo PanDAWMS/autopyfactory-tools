@@ -1,0 +1,14 @@
+
+* fixed apf-simulate-scheds
+
+---------------------------------------------------
+
+* apf-search-failed gets the input options from a config file instead of command line
+  apf-search-failed.conf-exampled added to etc/ directory
+
+* typo fixed in etc/apf-search-failed.sh-example
+
+---------------------------------------------------
+1.0.0-2
+
+* adding examples of RRD code (to create the DB, update the DB, plot the content).
