@@ -1,0 +1,7 @@
+[CONFIG]
+
+STRING = FAILED
+FORMAT = html
+NHOURS = 1
+BASEDIR = /home/apf/factory/logs
+

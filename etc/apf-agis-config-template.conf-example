@@ -1,0 +1,32 @@
+[DEFAULT]
+
+vo = ATLAS
+status = online
+override = True
+enabled = True
+
+cleanlogs.keepdays = 7
+
+# plugins
+batchstatusplugin = Condor
+wmsstatusplugin = Panda
+schedplugin = Ready
+monitorsection = apfmon-lancaster
+
+schedplugin = Ready, StatusTest, MaxToRun, MinPerCycle, MaxPerCycle, MaxPending, StatusOffline
+sched.statustest.allowed = True
+sched.statustest.pilots = 1
+sched.statusoffline.allowed = True
+sched.minpercycle.minimum = 0
+sched.maxpending.maximum = 25
+
+sched.maxtorun.maximum = 9999 
+sched.maxpercycle.maximum = 25
+
+executable = /data/atlpan/libexec/runpilot3-wrapper-oct02.sh
+executable.defaultarguments = -s %(wmsqueue)s -h %(batchqueue)s -p 25443 -w https://pandaserver.cern.ch -j false
+
+hold = periodic_hold = JobStatus==1 && gridjobstatus=?=UNDEFINED && CurrentTime-EnteredCurrentStatus>3600
+remove = periodic_remove = (JobStatus == 5 && (CurrentTime - EnteredCurrentStatus) > 3600) || (JobStatus == 1 && globusstatus =!= 1 && (CurrentTime - EnteredCurrentStatus) > 86400)
+
+apfqueue.sleep = 300
