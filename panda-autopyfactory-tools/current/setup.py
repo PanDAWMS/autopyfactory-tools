@@ -36,15 +36,15 @@ utils_files = ['src/apf-agis-config',
                'src/apf-simulate-scheds',
                ]
 
+# etc files are handled by setup.cfg
 etc_files = ['etc/apf-agis-config-template.conf-example',
             ]
-
 
 
 # -----------------------------------------------------------
 
 rpm_data_files=[('/usr/share/autopyfactory', utils_files),                                        
-                ('/etc/autopyfactory',       etc_files),
+                #('/etc/autopyfactory',       etc_files),
                ]
 
 # -----------------------------------------------------------
