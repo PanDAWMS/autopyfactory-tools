@@ -43,7 +43,7 @@ slotobjs = []
 
 lines = out.split('\n')
 for line in lines:
-    (name, slotid, activity, nodetype, loadavg, remotegroup) = line.split()
+    (name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid) = line.split()
     so = CondorSlot(name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid )
     slotobjs.append(so)
 #print(lines)
