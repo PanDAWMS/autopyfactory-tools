@@ -7,7 +7,7 @@ import subprocess
 
 class CondorSlot(object):
 
-    def __init__(self, name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid):
+    def __init__(self, name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid, ec2publicdns):
         
 
         (self.slot, self.machine) = name.split("@")
@@ -17,6 +17,7 @@ class CondorSlot(object):
         self.loadavg = loadavg
         self.remotegroup = remotegroup
         self.ec2instanceid = ec2instanceid
+        self.ec2publicdns = ec2publicdns
 
     def __str__(self):
         s=''
@@ -28,10 +29,11 @@ class CondorSlot(object):
         s+=' %s ' % self.loadavg
         s+=' %s ' % self.remotegroup
         s+=' %s ' % self.ec2instanceid
+        s+=' %s ' % self.ec2publicdns
         return s
 
 
-cmd = 'condor_status -autoformat Name SlotID Activity NodeType LoadAvg RemoteGroup EC2InstanceID'
+cmd = 'condor_status -autoformat Name SlotID Activity NodeType LoadAvg RemoteGroup EC2InstanceID EC2PublicDNS'
 print("Invoking command: '%s'"% cmd)
 
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)     
@@ -43,8 +45,8 @@ slotobjs = []
 
 lines = out.split('\n')
 for line in lines:
-    (name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid) = line.split()
-    so = CondorSlot(name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid )
+    (name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid, ec2publicdns) = line.split()
+    so = CondorSlot(name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid, ec2publicdns )
     slotobjs.append(so)
 #print(lines)
 
