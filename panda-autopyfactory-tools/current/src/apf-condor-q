@@ -1,0 +1,47 @@
+#!/bin/sh
+ 
+# NOTE:
+#  . Requires condor_q >= 7.5.2, old classads do not
+#    have %
+#  . When running, jobs show RUN_TIME of their current
+#    run, not accumulated, which would require adding
+#    in RemoteWallClockTime
+#  . See condor_utils/condor_q.cpp:encode_status for
+#    JobStatus map
+ 
+# TODO:
+#  . Remove extra ShadowBday==0 test,
+#    condor_gridmanager < 7.7.5 (3a896d01) did not
+#    delete ShadowBday when a job was not running.
+#    RUN_TIME of held EC2 jobs would be wrong.
+ 
+echo ' ID      OWNER            SUBMITTED     RUN_TIME ST PRI SIZE   APFQUEUE        CMD '
+condor_q \
+   -format '%4d.' ClusterId \
+   -format '%-3d ' ProcId \
+   -format '%-14s ' Owner \
+   -format '%-11s ' 'formatTime(QDate,"%m/%d %H:%M")' \
+   -format '%3d+' 'ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) / (60*60*24)' \
+   -format '%02d:' '(ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % (60*60*24)) / (60*60)' \
+   -format '%02d:' '(ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % (60*60)) / 60' \
+   -format '%02d ' 'ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % 60' \
+   -format '%-2s ' 'substr("?IRXCH>S", JobStatus, 1)' \
+   -format '%-3d ' JobPrio \
+   -format '%-5.1f ' ImageSize/1024.0 \
+   -format '%-22s ' MATCH_APF_QUEUE \
+   -format '%-32.32s \n' Cmd \
+#   -format '\n' Owner \
+
+#   -format '%-18.18s' 'strcat(Cmd," ",Arguments)' \
+#   -format '  Instance name: %s\n' EC2InstanceName \
+#   -format '  Hostname: %s\n' EC2RemoteVirtualMachineName \
+#   -format '  Keypair file: %s\n' EC2KeyPairFile \
+#   -format '  User data: %s\n' EC2UserData \
+#   -format '  User data file: %s\n' EC2UserDataFile \
+#   -format '  AMI id: %s\n' EC2AmiID \
+#   -format '  Instance type: %s\n' EC2InstanceType \
+#   "$@" | awk 'BEGIN {St["I"]=0;St["R"]=0;St["H"]=0} \
+#           {St[$6]++; print} \
+#           END {for (i=0;i<=7;i++) jobs+=St[substr("?IRXCH>S",i,1)]; \
+#                print jobs, "jobs;", \
+ #                 St["I"], "idle,", St["R"], "running,", St["H"], "held"}'
