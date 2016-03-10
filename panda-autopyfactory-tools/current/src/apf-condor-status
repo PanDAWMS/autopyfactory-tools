@@ -1,62 +1,192 @@
 #!/bin/env python
-#
-# Long format condor_status with information relevant to APF admins
-#
 
 import subprocess
 
-class CondorSlot(object):
 
-    def __init__(self, name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid, ec2publicdns):
-        
+#   [root@gridtest03 status]# condor_status -autoformat Name SlotID Activity NodeType LoadAvg RemoteGroup EC2InstanceID EC2PublicDNS EC2AMIID SlotType
+#   slot1@ip-10-254-77-182.us-west-1.compute.internal 1 Idle atlas 0.15 undefined i-92ea5e51 ec2-54-177-254-54.us-west-1.compute.amazonaws.com ami-d13141b1 Partitionable
+#   slot1_3@ip-10-254-77-182.us-west-1.compute.internal 1 Busy atlas 0.9399999999999999 group_prod i-92ea5e51 ec2-54-177-254-54.us-west-1.compute.amazonaws.com ami-d13141b1 Dynamic
 
-        (self.slot, self.machine) = name.split("@")
-        self.slotid = slotid
-        self.activity = activity
-        self.nodetype = nodetype
-        self.loadavg = loadavg
-        self.remotegroup = remotegroup
-        self.ec2instanceid = ec2instanceid
-        self.ec2publicdns = ec2publicdns
+
+class BColors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+class Slot(object):
+
+    def __init__(self, line):
+    # example of line
+    # slot1@ip-10-254-77-182.us-west-1.compute.internal 1 Idle atlas 0.15 undefined i-92ea5e51 ec2-54-177-254-54.us-west-1.compute.amazonaws.com ami-d13141b1 Partitionable
+
+        self.wholeslot = None
+
+        (self.name, self.slotid, self.state, self.activity, self.nodetype, self.loadavg, self.remotegroup, self.ec2instanceid, self.ec2publicdns, self.ec2amiid, self.slottype) = line.split()
+
+        (self.slot, self.machine) = self.name.split("@")
+    if self.slottype == 'Partitionable':
+        self.name = '%s:%s' %(self.machine, self.slot)
+    if self.slottype == 'Dynamic':
+        self.name = '      %s:%s' %(self.machine, self.slot)
+
 
     def __str__(self):
+    
         s=''
-        s+='%s' % self.machine
-        s+=':%s ' % self.slot
-        s+=' %s ' % self.slotid
-        s+=' %s ' % self.activity
-        s+=' %s ' % self.nodetype
-        s+=' %s ' % self.loadavg
-        s+=' %s ' % self.remotegroup
-        s+=' %s ' % self.ec2instanceid
-        s+=' %s ' % self.ec2publicdns
+        s+='%s' % self.name
+        s+=' '*(self.wholeslot.wholeslotlist.maxname - len(self.name))
+        s+=' %s' % self.slotid
+        s+=' ' *(self.wholeslot.wholeslotlist.maxslotid - len(self.slotid))
+        s+=' %s' % self.state
+        s+=' ' *(self.wholeslot.wholeslotlist.maxstate - len(self.state))
+        s+=' %s' % self.activity
+        s+=' ' *(self.wholeslot.wholeslotlist.maxactivity - len(self.activity))
+        s+=' %s' % self.nodetype
+        s+=' ' *(self.wholeslot.wholeslotlist.maxnodetype - len(self.nodetype))
+        s+=' %s' % self.loadavg
+        s+=' ' *(self.wholeslot.wholeslotlist.maxloadavg - len(self.loadavg))
+        s+=' %s' % self.remotegroup
+        s+=' ' *(self.wholeslot.wholeslotlist.maxremotegroup - len(self.remotegroup))
+        s+=' %s' % self.ec2instanceid
+        s+=' ' *(self.wholeslot.wholeslotlist.maxec2instanceid - len(self.ec2instanceid))
+        s+=' %s' % self.ec2publicdns
+        s+=' ' *(self.wholeslot.wholeslotlist.maxec2publicdns - len(self.ec2publicdns))
+        s+=' %s' % self.ec2amiid
+
+        if self.slottype == 'Partitionable':
+            s = '%s%s%s' %(BColors.FAIL, s, BColors.ENDC)
+
+        s+='\n'
+
+        return s
+        
+
+
+class WholeSlot(object):
+
+    def __init__(self):
+
+    self.wholeslotlist = None
+
+        self.machine = None
+        self.partitionable_slot = None
+        self.dynamic_slots = []
+    
+    def add(self, slot):
+    
+        slot.wholeslot = self
+
+        self.machine = slot.machine
+    
+        if slot.slottype == 'Partitionable':
+            self.partitionable_slot = slot
+        if slot.slottype == 'Dynamic':
+            self.dynamic_slots.append(slot)
+        
+    def __str__(self):
+
+        s = '' 
+        s += self.partitionable_slot.__str__()
+        for slot in self.dynamic_slots:
+            s += slot.__str__()
         return s
 
 
-cmd = 'condor_status -autoformat Name SlotID Activity NodeType LoadAvg RemoteGroup EC2InstanceID EC2PublicDNS'
-print("Invoking command: '%s'"% cmd)
+
+class WholeSlotList(object):
+
+    def __init__(self):
+
+    self.whole_slots = []
+
+    self.maxname = 0
+        self.maxslotid = 0
+        self.maxstate = 0
+        self.maxactivity = 0
+        self.maxnodetype = 0
+        self.maxloadavg = 0
+        self.maxremotegroup = 0
+        self.maxec2instanceid = 0
+        self.maxec2publicdns = 0
+        self.maxec2amiid = 0
+
+    def add(self, slot):
+
+    if slot.slottype == 'Partitionable':
+        new_whole_slot = WholeSlot()
+            new_whole_slot.wholeslotlist = self
+        new_whole_slot.add(slot)
+        self.whole_slots.append(new_whole_slot)
+    if slot.slottype == 'Dynamic':
+            for whole_slot in self.whole_slots:
+        if whole_slot.machine == slot.machine:
+                whole_slot.add(slot)
+                    break 
+
+    if len(slot.name) > self.maxname:           self.maxname = len(slot.name)
+        if len(slot.slotid) > self.maxslotid:           self.maxslotid = len(slot.slotid)
+    if len(slot.state) > self.maxstate:             self.maxstate = len(slot.state)
+        if len(slot.activity) > self.maxactivity:       self.maxactivity = len(slot.activity)
+        if len(slot.nodetype) > self.maxnodetype:       self.maxnodetype = len(slot.nodetype)
+        if len(slot.loadavg) > self.maxloadavg:         self.maxloadavg = len(slot.loadavg)
+        if len(slot.remotegroup) > self.maxremotegroup:     self.maxremotegroup = len(slot.remotegroup)
+        if len(slot.ec2instanceid) > self.maxec2instanceid:     self.maxec2instanceid = len(slot.ec2instanceid)
+        if len(slot.ec2publicdns) > self.maxec2publicdns:   self.maxec2publicdns = len(slot.ec2publicdns)
+        if len(slot.ec2amiid) > self.maxec2amiid:       self.maxec2amiid = len(slot.ec2amiid)
+
+
+    def sort(self):
+    '''
+        put all WholeSlot objects with no dynamic slots together
+    '''
+       
+        empty_whole_slots = []
+        filled_whole_slots = []
+         
+        for whole_slot in self.whole_slots:
+            if len(whole_slot.dynamic_slots) == 0:
+                empty_whole_slots.append(whole_slot)
+            else:
+                filled_whole_slots.append(whole_slot)
+
+        new_whole_slots = empty_whole_slots + filled_whole_slots
+    self.whole_slots = new_whole_slots
+    
+
+    def __str__(self):
+
+    s = ''
+        for whole_slot in self.whole_slots:
+            s += whole_slot.__str__()
+        
+        if len(s) > 0:
+            s = s[:-1]
+        return s 
+
+
+
+
+
+wholeslotlist = WholeSlotList()
+
+cmd = 'condor_status -autoformat Name SlotID State Activity NodeType LoadAvg RemoteGroup EC2InstanceID EC2PublicDNS EC2AMIID SlotType'
 
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)     
 (out, err) = p.communicate()
 out=out.strip()
-#print("OUT=%s" % out)
-
-slotobjs = []
 
 lines = out.split('\n')
 for line in lines:
-    (name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid, ec2publicdns) = line.split()
-    so = CondorSlot(name, slotid, activity, nodetype, loadavg, remotegroup, ec2instanceid, ec2publicdns )
-    slotobjs.append(so)
-#print(lines)
+    new_slot = Slot(line)
+    wholeslotlist.add(new_slot)
 
 
-for o in slotobjs:
-    if o.slot == "slot1":
-        print("%s " % o)
-        for x in slotobjs:
-           if x.machine == o.machine and x.slot != "slot1":
-                print("       %s " % x)
-
-
+#wholeslotlist.sort()
+print wholeslotlist
 
