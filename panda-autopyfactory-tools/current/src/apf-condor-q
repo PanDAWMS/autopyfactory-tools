@@ -1,47 +1,65 @@
-#!/bin/sh
- 
-# NOTE:
-#  . Requires condor_q >= 7.5.2, old classads do not
-#    have %
-#  . When running, jobs show RUN_TIME of their current
-#    run, not accumulated, which would require adding
-#    in RemoteWallClockTime
-#  . See condor_utils/condor_q.cpp:encode_status for
-#    JobStatus map
- 
-# TODO:
-#  . Remove extra ShadowBday==0 test,
-#    condor_gridmanager < 7.7.5 (3a896d01) did not
-#    delete ShadowBday when a job was not running.
-#    RUN_TIME of held EC2 jobs would be wrong.
- 
-echo ' ID      OWNER            SUBMITTED     RUN_TIME ST PRI SIZE   APFQUEUE        CMD '
-condor_q \
-   -format '%4d.' ClusterId \
-   -format '%-3d ' ProcId \
-   -format '%-14s ' Owner \
-   -format '%-11s ' 'formatTime(QDate,"%m/%d %H:%M")' \
-   -format '%3d+' 'ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) / (60*60*24)' \
-   -format '%02d:' '(ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % (60*60*24)) / (60*60)' \
-   -format '%02d:' '(ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % (60*60)) / 60' \
-   -format '%02d ' 'ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % 60' \
-   -format '%-2s ' 'substr("?IRXCH>S", JobStatus, 1)' \
-   -format '%-3d ' JobPrio \
-   -format '%-5.1f ' ImageSize/1024.0 \
-   -format '%-22s ' MATCH_APF_QUEUE \
-   -format '%-32.32s \n' Cmd \
-#   -format '\n' Owner \
+#!/bin/env python
 
-#   -format '%-18.18s' 'strcat(Cmd," ",Arguments)' \
-#   -format '  Instance name: %s\n' EC2InstanceName \
-#   -format '  Hostname: %s\n' EC2RemoteVirtualMachineName \
-#   -format '  Keypair file: %s\n' EC2KeyPairFile \
-#   -format '  User data: %s\n' EC2UserData \
-#   -format '  User data file: %s\n' EC2UserDataFile \
-#   -format '  AMI id: %s\n' EC2AmiID \
-#   -format '  Instance type: %s\n' EC2InstanceType \
-#   "$@" | awk 'BEGIN {St["I"]=0;St["R"]=0;St["H"]=0} \
-#           {St[$6]++; print} \
-#           END {for (i=0;i<=7;i++) jobs+=St[substr("?IRXCH>S",i,1)]; \
-#                print jobs, "jobs;", \
- #                 St["I"], "idle,", St["R"], "running,", St["H"], "held"}'
+import subprocess
+import time
+
+status_mappings = {'0': 'U', 
+                   '1': 'I',
+                   '2': 'R',
+                   '3': 'X',
+                   '4': 'C',
+                   '5': 'H',
+                   '6': 'E'}
+
+cmd = 'condor_q -autoformat:th ClusterId ProcId Owner QDate Cmd JobStatus RemoteWallClockTime MATCH_APF_QUEUE'
+p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+(out, err) = p.communicate()
+out=out.strip()
+
+maxid = 0
+maxowner = 0
+maxcmd = 0
+maxtime = 0
+
+
+lines = out.split('\n')
+for line in lines[1:]:
+    (clusterid, procid, owner, qdate, cmd, jobstatus, walltime, match_apf_queue) = line.split()
+
+    id = '%s.%s' %(clusterid, procid)
+    jobstatus = status_mappings[jobstatus]
+    qdate = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(qdate)))
+    m, s = divmod(int(float(walltime)), 60)
+    h, m = divmod(m, 60)
+    walltime = '%d:%02d:%02d' %(h, m, s)
+    # NOTE: sometime RemoteWallClockTime is 0.0, even for running jobs
+    #       I think that's why some scripts do this
+    #           -format '%3d+' 'ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) / (60*60*24)' \
+    #           -format '%02d:' '(ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % (60*60*24)) / (60*60)' \
+    #           -format '%02d:' '(ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % (60*60)) / 60' \
+    #           -format '%02d ' 'ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % 60' \
+
+    if len(id)        > maxid    : maxid    = len(id)
+    if len(owner)     > maxowner : maxowner = len(owner)          
+    if len(cmd)       > maxcmd   : maxcmd   = len(cmd)            
+    if len(walltime)  > maxtime  : maxtime  = len(walltime)            
+
+    s = ''
+    s += '%s' %id
+    s += ' '*(maxid - len(id))
+    s += '  %s' %owner
+    s += ' '*(maxowner -len(owner)) 
+    s += '  %s' %qdate
+    s += '  %s' %cmd
+    s += ' '*(maxcmd -len(cmd)) 
+    s += '  %s' %jobstatus
+    s += '  %s' %walltime
+    s += ' '*(maxtime -len(walltime)) 
+    s += '  %s' %match_apf_queue
+
+    print s
+
+
+
+
+
