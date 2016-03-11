@@ -3,52 +3,97 @@
 import subprocess
 import time
 
-status_mappings = {'0': 'U', 
-                   '1': 'I',
-                   '2': 'R',
-                   '3': 'X',
-                   '4': 'C',
-                   '5': 'H',
-                   '6': 'E'}
+
+class Job(object):
+    def __init__(self, line):
+        """
+        example of line:
+            88705.4 autopyfactory 1457714913 /usr/libexec/wrapper-0.9.16.sh 2 0.0 BNL_EC2W2_MCORE
+        """
+  
+        self.jobslist = None
+        
+    (self.id, self.owner, self.qdate, self.cmd, self.jobstatus, self.walltime, self.match_apf_queue) = line.split()
+
+        status_mappings = {'0': 'U', 
+                           '1': 'I',
+                           '2': 'R',
+                           '3': 'X',
+                           '4': 'C',
+                           '5': 'H',
+                           '6': 'E'}
+    self.jobstatus = status_mappings[self.jobstatus]
+    self.qdate = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(self.qdate)))
+    m, s = divmod(int(float(self.walltime)), 60)
+    h, m = divmod(m, 60)
+    self.walltime = '%d:%02d:%02d' %(h, m, s)
+
+    def __str__(self):
+
+        s = ''
+        s += '%s' %self.id
+    s += ' '*(self.jobslist.maxid - len(self.id))
+    s += '  %s' %self.owner
+    s += ' '*(self.jobslist.maxowner -len(self.owner)) 
+        s += '  %s' %self.qdate
+    s += '  %s' %self.cmd
+    s += ' '*(self.jobslist.maxcmd -len(self.cmd)) 
+    s += '  %s' %self.jobstatus
+        s += '  %s' %self.walltime
+    s += ' '*(self.jobslist.maxtime -len(self.walltime)) 
+    s += '  %s' %self.match_apf_queue
+        s += '\n'
+    return s
+
+
+class JobsList(object):
+
+    def __init__(self):
+
+        self.jobs = []
+
+    self.maxid = 0
+    self.maxowner = 0        
+    self.maxcmd = 0         
+    self.maxtime = 0             
+
+    def add(self, job):
+
+    job.jobslist = self
+
+        self.jobs.append(job)
+
+    if len(job.id)        > self.maxid    : self.maxid    = len(job.id)
+    if len(job.owner)     > self.maxowner : self.maxowner = len(job.owner)          
+    if len(job.cmd)       > self.maxcmd   : self.maxcmd   = len(job.cmd)            
+    if len(job.walltime)  > self.maxtime  : self.maxtime  = len(job.walltime)            
+
+
+    def __str__(self):
+
+        s = ''
+        for job in self.jobs:
+            s += job.__str__()
+
+        if len(s)>0:
+            s = s[:-1]
+  
+        return s
+
+
 
 cmd = 'condor_q -format "%s." ClusterId -format "%s " ProcId -format "%s " Owner -format "%s " QDate -format "%s " Cmd -format "%s " JobStatus -format "%s " RemoteWallClockTime -format "%s\n" MATCH_APF_QUEUE'
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 (out, err) = p.communicate()
 out=out.strip()
 
-maxid = 0
-maxowner = 0
-maxcmd = 0
-maxtime = 0
 
+jobslist = JobsList()
 
 lines = out.split('\n')
-for line in lines[1:]:
-    (id, owner, qdate, cmd, jobstatus, walltime, match_apf_queue) = line.split()
+for line in lines:
+    new_job = Job(line)
+    jobslist.add(new_job)
 
-    jobstatus = status_mappings[jobstatus]
-    qdate = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(qdate)))
-    m, s = divmod(int(float(walltime)), 60)
-    h, m = divmod(m, 60)
-    walltime = '%d:%02d:%02d' %(h, m, s)
-
-    if len(id)        > maxid    : maxid    = len(id)
-    if len(owner)     > maxowner : maxowner = len(owner)          
-    if len(cmd)       > maxcmd   : maxcmd   = len(cmd)            
-    if len(walltime)  > maxtime  : maxtime  = len(walltime)            
-
-    s = ''
-    s += '%s' %id
-    s += ' '*(maxid - len(id))
-    s += '  %s' %owner
-    s += ' '*(maxowner -len(owner)) 
-    s += '  %s' %qdate
-    s += '  %s' %cmd
-    s += ' '*(maxcmd -len(cmd)) 
-    s += '  %s' %jobstatus
-    s += '  %s' %walltime
-    s += ' '*(maxtime -len(walltime)) 
-    s += '  %s' %match_apf_queue
-
-    print s
+print jobslist
 
