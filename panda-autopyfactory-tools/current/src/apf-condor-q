@@ -11,7 +11,7 @@ status_mappings = {'0': 'U',
                    '5': 'H',
                    '6': 'E'}
 
-cmd = 'condor_q -autoformat:th ClusterId ProcId Owner QDate Cmd JobStatus RemoteWallClockTime MATCH_APF_QUEUE'
+cmd = 'condor_q -format "%s." ClusterId -format "%s " ProcId -format "%s " Owner -format "%s " QDate -format "%s " Cmd -format "%s " JobStatus -format "%s " RemoteWallClockTime -format "%s\n" MATCH_APF_QUEUE'
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 (out, err) = p.communicate()
 out=out.strip()
@@ -24,20 +24,13 @@ maxtime = 0
 
 lines = out.split('\n')
 for line in lines[1:]:
-    (clusterid, procid, owner, qdate, cmd, jobstatus, walltime, match_apf_queue) = line.split()
+    (id, owner, qdate, cmd, jobstatus, walltime, match_apf_queue) = line.split()
 
-    id = '%s.%s' %(clusterid, procid)
     jobstatus = status_mappings[jobstatus]
     qdate = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(qdate)))
     m, s = divmod(int(float(walltime)), 60)
     h, m = divmod(m, 60)
     walltime = '%d:%02d:%02d' %(h, m, s)
-    # NOTE: sometime RemoteWallClockTime is 0.0, even for running jobs
-    #       I think that's why some scripts do this
-    #           -format '%3d+' 'ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) / (60*60*24)' \
-    #           -format '%02d:' '(ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % (60*60*24)) / (60*60)' \
-    #           -format '%02d:' '(ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % (60*60)) / 60' \
-    #           -format '%02d ' 'ifThenElse(ShadowBday =!= UNDEFINED, ifThenElse(ShadowBday != 0, time() - ShadowBday, int(RemoteWallClockTime)), int(RemoteWallClockTime)) % 60' \
 
     if len(id)        > maxid    : maxid    = len(id)
     if len(owner)     > maxowner : maxowner = len(owner)          
@@ -58,8 +51,4 @@ for line in lines[1:]:
     s += '  %s' %match_apf_queue
 
     print s
-
-
-
-
 
