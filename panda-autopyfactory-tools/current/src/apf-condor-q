@@ -48,7 +48,15 @@ class Job(object):
   
         self.jobslist = None
         
-        (self.clusterid, self.procid, self.owner, self.qdate, self.cmd, self.jobstatus, self.enteredcurrentstatus, self.ec2amiid, self.match_apf_queue) = line.split()
+        (self.clusterid, 
+         self.procid, 
+         self.owner, 
+         self.qdate, 
+         self.cmd, 
+         self.jobstatus, 
+         self.enteredcurrentstatus, 
+         self.ec2amiid, 
+         self.match_apf_queue) = line.split()
 
     self.id = '%s.%s' %(self.clusterid, self.procid)
 
