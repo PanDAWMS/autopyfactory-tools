@@ -13,7 +13,7 @@ class Job(object):
   
         self.jobslist = None
         
-    (self.id, self.owner, self.qdate, self.cmd, self.jobstatus, self.walltime, self.match_apf_queue) = line.split()
+        (self.id, self.owner, self.qdate, self.cmd, self.jobstatus, self.enteredcurrentstatus, self.ec2amiid, self.match_apf_queue) = line.split()
 
         status_mappings = {'0': 'U', 
                            '1': 'I',
@@ -22,28 +22,36 @@ class Job(object):
                            '4': 'C',
                            '5': 'H',
                            '6': 'E'}
-    self.jobstatus = status_mappings[self.jobstatus]
-    self.qdate = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(self.qdate)))
-    m, s = divmod(int(float(self.walltime)), 60)
-    h, m = divmod(m, 60)
-    self.walltime = '%d:%02d:%02d' %(h, m, s)
+        self.jobstatus = status_mappings[self.jobstatus]
+
+        self.timecurrentstatus = float(time.time()) - float(self.enteredcurrentstatus)
+        self.timecurrentstatus = int(self.timecurrentstatus)
+
+        self.qdate = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(self.qdate)))
+
+        days = self.timecurrentstatus/(24*3600)
+        rest = self.timecurrentstatus - days*24*3600
+        m, s = divmod(int(rest), 60)
+        h, m = divmod(m, 60)
+        self.enteredcurrentstatus= '%d+%02d:%02d:%02d' %(days, h, m, s)
 
     def __str__(self):
 
         s = ''
         s += '%s' %self.id
-    s += ' '*(self.jobslist.maxid - len(self.id))
-    s += '  %s' %self.owner
-    s += ' '*(self.jobslist.maxowner -len(self.owner)) 
+        s += ' '*(self.jobslist.maxid - len(self.id))
+        s += '  %s' %self.owner
+        s += ' '*(self.jobslist.maxowner -len(self.owner)) 
         s += '  %s' %self.qdate
-    s += '  %s' %self.cmd
-    s += ' '*(self.jobslist.maxcmd -len(self.cmd)) 
-    s += '  %s' %self.jobstatus
-        s += '  %s' %self.walltime
-    s += ' '*(self.jobslist.maxtime -len(self.walltime)) 
-    s += '  %s' %self.match_apf_queue
+        s += '  %s' %self.cmd
+        s += ' '*(self.jobslist.maxcmd -len(self.cmd)) 
+        s += '  %s' %self.jobstatus
+        s += '  %s' %self.enteredcurrentstatus
+        s += ' '*(self.jobslist.maxtime -len(self.enteredcurrentstatus)) 
+        s += '  %s' %self.ec2amiid
+        s += '  %s' %self.match_apf_queue
         s += '\n'
-    return s
+        return s
 
 
 class JobsList(object):
@@ -52,21 +60,21 @@ class JobsList(object):
 
         self.jobs = []
 
-    self.maxid = 0
-    self.maxowner = 0        
-    self.maxcmd = 0         
-    self.maxtime = 0             
+        self.maxid = 0
+        self.maxowner = 0        
+        self.maxcmd = 0         
+        self.maxtime = 0             
 
     def add(self, job):
 
-    job.jobslist = self
+        job.jobslist = self
 
         self.jobs.append(job)
 
-    if len(job.id)        > self.maxid    : self.maxid    = len(job.id)
-    if len(job.owner)     > self.maxowner : self.maxowner = len(job.owner)          
-    if len(job.cmd)       > self.maxcmd   : self.maxcmd   = len(job.cmd)            
-    if len(job.walltime)  > self.maxtime  : self.maxtime  = len(job.walltime)            
+        if len(job.id)                    > self.maxid    : self.maxid    = len(job.id)
+        if len(job.owner)                 > self.maxowner : self.maxowner = len(job.owner)          
+        if len(job.cmd)                   > self.maxcmd   : self.maxcmd   = len(job.cmd)            
+        if len(job.enteredcurrentstatus)  > self.maxtime  : self.maxtime  = len(job.enteredcurrentstatus)            
 
 
     def __str__(self):
@@ -82,7 +90,7 @@ class JobsList(object):
 
 
 
-cmd = 'condor_q -format "%s." ClusterId -format "%s " ProcId -format "%s " Owner -format "%s " QDate -format "%s " Cmd -format "%s " JobStatus -format "%s " RemoteWallClockTime -format "%s\n" MATCH_APF_QUEUE'
+cmd = 'condor_q -format "%s." ClusterId -format "%s " ProcId -format "%s " Owner -format "%s " QDate -format "%s " Cmd -format "%s " JobStatus -format "%s " EnteredCurrentStatus -format "%s " EC2AmiID  -format "%s\n" MATCH_APF_QUEUE'
 p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 (out, err) = p.communicate()
 out=out.strip()
@@ -96,4 +104,5 @@ for line in lines:
     jobslist.add(new_job)
 
 print jobslist
+
 
