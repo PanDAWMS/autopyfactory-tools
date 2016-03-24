@@ -4,6 +4,8 @@ import subprocess
 import time
 
 import htcondor
+import classad
+
 
 
 class Execution(object):
@@ -25,7 +27,7 @@ class Execution(object):
         schedd = htcondor.Schedd()
         out = schedd.query('true', self.list_attributes)
         
-        self.jobslist = JobsList()
+        self.jobslist = JobsList(['id', 'owner', 'cmd', 'enteredcurrentstatus', 'ec2amiid'])
         
         for job_classad in out:
             new_job = Job(job_classad, self)
@@ -46,7 +48,7 @@ class Job(object):
         """
         """
   
-        self.jobslist = None
+        self.jobslist = []
        
         # add a class attribute for each item in list_attributes
         # the name of the class attribute is just the lower case version of the value in list_attributes
@@ -60,9 +62,16 @@ class Job(object):
         #       self.enteredcurrentstatus = job_classad['EnteredCurrentStatus'] 
         #       self.ec2amiid = job_classad['EC2AmiID'] 
         #       self.match_apf_queue = job_classad['MATCH_APF_QUEUE']
+        # This can be done also with a dictionary,
+        # like self.dict_attr[ key ] = value
+        # but then the rest of the code is filled with stuff like
+        #    self.dict_attr[key] 
+        # instead of
+        #    self.key
+        # Using class attributes seems to be a little bit cleaner
         #
         for att in execution.list_attributes:
-            setattr(self, att.lower(), job_classad.get(att, "undefined"))
+            setattr(self, att.lower(), job_classad.get(att, "undefined" ))
 
         self.id = '%s.%s' %(self.clusterid, self.procid)
 
@@ -102,33 +111,57 @@ class Job(object):
 
         s = ''
         s += '%s' %self.id
-        s += ' '*(self.jobslist.maxid - len(self.id))
+        s += ' '*(self.jobslist.max_len_attr['id'] - len(self.id))
         s += '  %s' %self.owner
-        s += ' '*(self.jobslist.maxowner -len(self.owner)) 
+        s += ' '*(self.jobslist.max_len_attr['owner'] - len(self.owner)) 
         s += '  %s' %self.qdate
         s += '  %s' %self.cmd
-        s += ' '*(self.jobslist.maxcmd -len(self.cmd)) 
+        s += ' '*(self.jobslist.max_len_attr['cmd'] -len(self.cmd)) 
         s += '  %s' %self.jobstatus
         s += '  %s' %self.enteredcurrentstatus
-        s += ' '*(self.jobslist.maxtime -len(self.enteredcurrentstatus)) 
+        s += ' '*(self.jobslist.max_len_attr['enteredcurrentstatus'] -len(self.enteredcurrentstatus)) 
         s += '  %s' %self.ec2amiid
-        s += ' '*(self.jobslist.maxec2ami -len(self.ec2amiid)) 
+        s += ' '*(self.jobslist.max_len_attr['ec2amiid'] -len(self.ec2amiid)) 
         s += '  %s' %self.match_apf_queue
         s += '\n'
+
         return s
 
 
 class JobsList(object):
+    """
+    This class is just a container of objects.
+    It is actually a completely abstract class
+    so it can handle any kind of objects
 
-    def __init__(self):
+    It maintains a list of objects
+
+    Each time a new object is added to the list, 
+    via method add( ),
+    the string length of several object attributes
+    is checked, and the current maximum length is 
+    stored in a dictionary self.max_len_attr
+
+    The exact list of object attributes whose lengths
+    must be tracked is passed to the __init__( ) as input
+
+    There is a sort( ) method.
+    Therefore, the objects this container is handling
+    are expected to have a method __cmp__( ) implemented
+
+    There is a method __str__( ) that calls the
+    corresponding __str__( ) for the objects being stored.
+    So the objects must implement this __str__( ) method
+    """
+
+    def __init__(self, list_attr):
 
         self.jobs = []
 
-        self.maxid = 0
-        self.maxowner = 0        
-        self.maxcmd = 0         
-        self.maxtime = 0             
-        self.maxec2ami = 0
+        self.max_len_attr = {}
+        for i in list_attr:
+            self.max_len_attr[i] = 0
+
 
     def add(self, job):
 
@@ -136,12 +169,12 @@ class JobsList(object):
 
         self.jobs.append(job)
 
-        if len(job.id)                   > self.maxid     : self.maxid     = len(job.id)
-        if len(job.owner)                > self.maxowner  : self.maxowner  = len(job.owner)          
-        if len(job.cmd)                  > self.maxcmd    : self.maxcmd    = len(job.cmd)            
-        if len(job.enteredcurrentstatus) > self.maxtime   : self.maxtime   = len(job.enteredcurrentstatus)            
-        if len(job.ec2amiid)             > self.maxec2ami : self.maxec2ami = len(job.ec2amiid)
-
+        for k in self.max_len_attr.keys():
+           v = getattr(job, k)
+           job_attr_len = len(getattr(job, k))
+           if job_attr_len > self.max_len_attr[k]:
+               self.max_len_attr[k] = job_attr_len 
+               
 
     def sort(self):
         self.jobs.sort()
@@ -154,14 +187,16 @@ class JobsList(object):
             s += job.__str__()
 
         if len(s)>0:
+            # this is to remove the very last \n
             s = s[:-1]
   
         return s
+
+
 
 if __name__ == '__main__':
 
     exe = Execution()
     exe.run()
     print exe.output()
-
 
