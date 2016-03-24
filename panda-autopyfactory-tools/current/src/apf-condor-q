@@ -3,6 +3,8 @@
 import subprocess
 import time
 
+import htcondor
+
 
 class Execution(object):
 
@@ -20,59 +22,64 @@ class Execution(object):
 
     def run(self):
 
-        cmd = 'condor_q -autoformat ' + ' '.join(self.list_attributes)
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-        (out, err) = p.communicate()
-        out=out.strip()
+        schedd = htcondor.Schedd()
+        out = schedd.query('true', self.list_attributes)
         
         self.jobslist = JobsList()
         
-        lines = out.split('\n')
-        for line in lines:
-            new_job = Job(line)
+        for job_classad in out:
+            new_job = Job(job_classad, self)
             self.jobslist.add(new_job)
 
 
     def output(self):
+        self.jobslist.sort()
+
+        # FIXME
+        # output should not return a string, I think
         return self.jobslist.__str__()
 
 
 
 class Job(object):
 
-    def __init__(self, line):
+    def __init__(self, job_classad, execution):
         """
-        example of line:
-            88705.4 autopyfactory 1457714913 /usr/libexec/wrapper-0.9.16.sh 2 0.0 BNL_EC2W2_MCORE
         """
   
         self.jobslist = None
-        
-        (self.clusterid, 
-         self.procid, 
-         self.owner, 
-         self.qdate, 
-         self.cmd, 
-         self.jobstatus, 
-         self.enteredcurrentstatus, 
-         self.ec2amiid, 
-         self.match_apf_queue) = line.split()
+       
+        # add a class attribute for each item in list_attributes
+        # the name of the class attribute is just the lower case version of the value in list_attributes
+        # For example:
+        #       self.clusterid = job_classad['ClusterId']
+        #       self.procid = job_classad['ProcId'] 
+        #       self.owner = job_classad['Owner'] 
+        #       self.qdate = job_classad['QDate'] 
+        #       self.cmd = job_classad['Cmd'] 
+        #       self.jobstatus = job_classad['JobStatus']
+        #       self.enteredcurrentstatus = job_classad['EnteredCurrentStatus'] 
+        #       self.ec2amiid = job_classad['EC2AmiID'] 
+        #       self.match_apf_queue = job_classad['MATCH_APF_QUEUE']
+        #
+        for att in execution.list_attributes:
+            setattr(self, att.lower(), job_classad[att])
 
-    self.id = '%s.%s' %(self.clusterid, self.procid)
+        self.id = '%s.%s' %(self.clusterid, self.procid)
 
-        status_mappings = {'0': 'U', 
-                           '1': 'I',
-                           '2': 'R',
-                           '3': 'X',
-                           '4': 'C',
-                           '5': 'H',
-                           '6': 'E'}
+        status_mappings = {0: 'U', 
+                           1: 'I',
+                           2: 'R',
+                           3: 'X',
+                           4: 'C',
+                           5: 'H',
+                           6: 'E'}
         self.jobstatus = status_mappings[self.jobstatus]
 
-    if self.jobstatus == 'R':
+        if self.jobstatus == 'R':
             self.timecurrentstatus = float(time.time()) - float(self.enteredcurrentstatus)
             self.timecurrentstatus = int(self.timecurrentstatus)
-    else:
+        else:
             self.timecurrentstatus = 0
 
 
@@ -83,6 +90,17 @@ class Job(object):
         m, s = divmod(int(rest), 60)
         h, m = divmod(m, 60)
         self.enteredcurrentstatus= '%d+%02d:%02d:%02d' %(days, h, m, s)
+
+
+    def __cmp__(self, other):
+
+        if self.id < other.id:
+            return -1
+        elif self.id > other.id:
+            return 1
+        else:
+            return 0
+
 
     def __str__(self):
 
@@ -114,7 +132,8 @@ class JobsList(object):
         self.maxowner = 0        
         self.maxcmd = 0         
         self.maxtime = 0             
-    self.maxec2ami = 0
+        self.maxec2ami = 0
+
 
     def add(self, job):
 
@@ -129,6 +148,10 @@ class JobsList(object):
         if len(job.ec2amiid)             > self.maxec2ami : self.maxec2ami = len(job.ec2amiid)
 
 
+    def sort(self):
+        self.jobs.sort()
+
+
     def __str__(self):
 
         s = ''
@@ -140,10 +163,12 @@ class JobsList(object):
   
         return s
 
+
 if __name__ == '__main__':
 
     exe = Execution()
     exe.run()
     print exe.output()
+
 
 
