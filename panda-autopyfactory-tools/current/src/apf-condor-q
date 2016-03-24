@@ -62,7 +62,7 @@ class Job(object):
         #       self.match_apf_queue = job_classad['MATCH_APF_QUEUE']
         #
         for att in execution.list_attributes:
-            setattr(self, att.lower(), job_classad.get(att, "UNDEFINED"))
+            setattr(self, att.lower(), job_classad.get(att, "undefined"))
 
         self.id = '%s.%s' %(self.clusterid, self.procid)
 
