@@ -31,7 +31,6 @@ class Execution(object):
             new_job = Job(job_classad, self)
             self.jobslist.add(new_job)
 
-
     def output(self):
         self.jobslist.sort()
 
@@ -63,7 +62,7 @@ class Job(object):
         #       self.match_apf_queue = job_classad['MATCH_APF_QUEUE']
         #
         for att in execution.list_attributes:
-            setattr(self, att.lower(), job_classad[att])
+            setattr(self, att.lower(), job_classad.get(att, "UNDEFINED"))
 
         self.id = '%s.%s' %(self.clusterid, self.procid)
 
@@ -91,16 +90,13 @@ class Job(object):
         h, m = divmod(m, 60)
         self.enteredcurrentstatus= '%d+%02d:%02d:%02d' %(days, h, m, s)
 
-
     def __cmp__(self, other):
-
         if self.id < other.id:
             return -1
         elif self.id > other.id:
             return 1
         else:
             return 0
-
 
     def __str__(self):
 
@@ -134,7 +130,6 @@ class JobsList(object):
         self.maxtime = 0             
         self.maxec2ami = 0
 
-
     def add(self, job):
 
         job.jobslist = self
@@ -163,12 +158,10 @@ class JobsList(object):
   
         return s
 
-
 if __name__ == '__main__':
 
     exe = Execution()
     exe.run()
     print exe.output()
-
 
 
