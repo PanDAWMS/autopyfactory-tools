@@ -219,7 +219,7 @@ class Container(object):
 
         for k in self.max_len_attr.keys():
            v = getattr(obj, k)
-           obj_attr_len = len(getattr(obj, k))
+           obj_attr_len = len(v)
            if obj_attr_len > self.max_len_attr[k]:
                self.max_len_attr[k] = obj_attr_len 
                
