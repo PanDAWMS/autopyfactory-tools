@@ -7,7 +7,15 @@ import htcondor
 
 
 
-class Execution(object):
+class Query(object):
+    """
+    This is the class that implements the HTCondor query.
+    It just does that, it does not interpret the output of the query,
+    for each line in the output, it creates an object of class Job() 
+    and feed it with that line. 
+    The object Job( ) is supposed to know how to interpret and manipulate
+    the content of the output of the HTCondor query.
+    """
 
     def __init__(self):
 
@@ -22,19 +30,7 @@ class Execution(object):
                                 'EC2AmiID', 
                                 'MATCH_APF_QUEUE']
 
-        # this is the list of attributes, or fields,  
-        # we want to display in the output
-        self.output_attributes = ['id', 
-                                  'owner', 
-                                  'qdate', 
-                                  'cmd', 
-                                  'jobstatus', 
-                                  'enteredcurrentstatus', 
-                                  'ec2amiid', 
-                                  'match_apf_queue']
-
-        self.container = Container(self.output_attributes)
-
+        self.container = Container()
 
     def run(self):
 
@@ -61,8 +57,36 @@ class Execution(object):
 
 
 class UI(object):
+    """
+    this class just implements a method to print out to the stdout 
+    the final results
+
+    It simply gets the output of the query, after being interpreted and 
+    manipulated, by calling method get( )
+    This class does not implement method get( ), 
+    so get( ) it is supposed to be implemented in a different class XYZ,
+    and everything being used by a child class:
+
+        class Child(XYZ, UI)
+
+    therefore, class Child will have available methods from this class UI
+    and from class XYZ that implements get( ), among other things.
+    """
 
     def display(self):
+        """
+        this is the method that prints out to stdout the results
+        of the query.
+
+        We first call get( ), which is implemented in a different class.
+        The output of get MUST be a list of lists.
+        We calculate, the maximum lenght for each field 
+        -in other words, each item at position i for each list-.
+        Then we just double loop over the list of lists, 
+        print each field, and the needed number of white spaces to 
+        reach the maximum previously calculated for that field.
+        That way, all fields are always displayed well aligned. 
+        """
 
     out = self.get()
 
@@ -70,9 +94,21 @@ class UI(object):
             return ""
         
         # if there is actual content in out...
+        maxs = self._calculate_max(out)
+        self._display(out, maxs)
+ 
+
+    def _calculate_max(self, out):
+
         maxs = []
         for i in range(len(out[0])):
-            maxs.append(len(max(out[j][i] for j in range(len(out)))))
+            # max length for field i on every line in out:
+            max_i = max(len(obj[i]) for obj in out)
+            maxs.append(max_i)
+        return maxs
+
+
+    def _display(self, out, maxs):
 
         for line in out:
             s = ""
@@ -82,41 +118,80 @@ class UI(object):
             print s
 
 
-
 class Job(object):
+    """
+    This is the class to handle each Job.
+    Therefore, this is the class that knows how to interpret and manipulate
+    the output of the query done in class Query( )
+    """
 
-    def __init__(self, job_classad, execution):
+    def __init__(self, job_classad, query):
         """
         job_classad is each one of the objects returned by htcondor.Schedd().query() method
-        execution is a "pointer" to the class Execution that creates all Job() objects
+        query is a "pointer" to the class Query that creates all Job() objects
+    We use a reference to Query( ) class 
+        because it contains a list of the classad attributes
+        being used in the query, 
+        which is the list of attributes in the job_classad input variable,
+        so we know what is each field in job_classad
         """
-  
-        self.container = None
-       
-        # add a class attribute for each item in list_attributes
-        # the name of the class attribute is just the lower case version of the value in list_attributes
-        # For example:
-        #       self.clusterid = job_classad['ClusterId']
-        #       self.procid = job_classad['ProcId'] 
-        #       self.owner = job_classad['Owner'] 
-        #       self.qdate = job_classad['QDate'] 
-        #       self.cmd = job_classad['Cmd'] 
-        #       self.jobstatus = job_classad['JobStatus']
-        #       self.enteredcurrentstatus = job_classad['EnteredCurrentStatus'] 
-        #       self.ec2amiid = job_classad['EC2AmiID'] 
-        #       self.match_apf_queue = job_classad['MATCH_APF_QUEUE']
-        # This can be done also with a dictionary,
-        # like self.dict_attr[ key ] = value
-        # but then the rest of the code is filled with stuff like
-        #    self.dict_attr[key] 
-        # instead of
-        #    self.key
-        # Using class attributes seems to be a little bit cleaner
-        #
-        for att in execution.query_attributes:
-            setattr(self, att.lower(), job_classad.get(att, "undefined" ))
 
+        self.query = query
+        self.job_classad = job_classad
+
+        # this is the list of attributes, or fields,  
+        # we want to display in the output
+        self.list_attr = ['id', 
+                          'owner', 
+                          'qdate', 
+                          'cmd', 
+                          'jobstatus', 
+                          'enteredcurrentstatus', 
+                          'ec2amiid', 
+                          'match_apf_queue']
+  
+        self._create_attributes()
         self._parseattributes()
+
+
+    def _create_attributes(self):
+        """ 
+        add a class attribute for each item in list_attributes
+        the name of the class attribute is just the lower case version of the value in list_attributes
+        For example:
+
+              self.clusterid = self.job_classad['ClusterId']
+              self.procid = self.job_classad['ProcId'] 
+              self.owner = self.job_classad['Owner'] 
+              self.qdate = self.job_classad['QDate'] 
+              self.cmd = self.job_classad['Cmd'] 
+              self.jobstatus = self.job_classad['JobStatus']
+              self.enteredcurrentstatus = self.job_classad['EnteredCurrentStatus'] 
+              self.ec2amiid = self.job_classad['EC2AmiID'] 
+              self.match_apf_queue = self.job_classad['MATCH_APF_QUEUE']
+              ...
+
+        This can be done also with a dictionary,
+        like self.dict_attr[ key ] = value
+        but then the rest of the code is filled with stuff like
+ 
+           self.dict_attr[key] 
+
+        instead of
+
+           self.key
+
+        Using class attributes seems to be a little bit cleaner.
+        That is the only reason to do it this way.
+
+        If some of the fields was not included in the query output,
+        we give string "undefined" to it. 
+        We do that, because we want all fields always to have a content,
+        so when they are displayed, all columns exists.
+        """ 
+        
+        for att in self.query.query_attributes:
+            setattr(self, att.lower(), self.job_classad.get(att, "undefined" ))
 
     
     def _parseattributes(self):
@@ -165,71 +240,42 @@ class Job(object):
         else:
             return 0
 
+
     def get(self):
-        #print [getattr(self,att) for att in self.container.list_attr]
-        return [getattr(self,att) for att in self.container.list_attr]
+        return [getattr(self,att) for att in self.list_attr]
         
 
-    def __str__(self):
-        """
-        we build the final output string
-        by looping over all items in Execution.output_attributes
-        ( which is the same that self.container.list_attr )
-
-        For each item, we
-           1) add the item to the string
-           2) as many white spaces as needed to align columns
-       
-        The needed number of white spaces is calculated from 
-        the difference of current item length and maximum item length.
-        The maximum item length is stored in 
-        self.container.max_len_attr dictionary.
-        """
-
-        s = ''
-        for attr in self.container.list_attr:
-            s += '%s  ' %getattr(self, attr)
-            s += ' '* (self.container.max_len_attr[attr] - len(getattr(self, attr)))
-        s += '\n'
-
-        return s
+    ###def __str__(self):
+    ###    """
+    ###    we build the final output string
+    ###    by looping over all items in self.list_attr
+    ###    For each item, we
+    ###       1) add the item to the string
+    ###       2) as many white spaces as needed to align columns
+    ###   
+    ###    The needed number of white spaces is calculated from 
+    ###    the difference of current item length and maximum item length.
+    ###    The maximum item length is stored in 
+    ###    self.container.max_len_attr dictionary.
+    ###    """
+    ###    s = ''
+    ###    for attr in self.list_attr:
+    ###        s += '%s  ' %getattr(self, attr)
+    ###        s += ' '* (self.container.max_len_attr[attr] - len(getattr(self, attr)))
+    ###    s += '\n'
+    ###    return s
 
 
 class Container(object):
     """
     This class is just a container of objects.
     It is actually a completely abstract class
-    so it can handle any kind of objects
-
-    It maintains a list of objects
-
-    Each time a new object is added to the list, 
-    via method add( ),
-    the string length of several object attributes
-    is checked, and the current maximum length is 
-    stored in a dictionary self.max_len_attr
-
-    The exact list of object attributes whose lengths
-    must be tracked is passed to the __init__( ) as input
-
-    There is a sort( ) method.
-    Therefore, the objects this container is handling
-    are expected to have a method __cmp__( ) implemented
-
-    There is a method __str__( ) that calls the
-    corresponding __str__( ) for the objects being stored.
-    So the objects must implement this __str__( ) method
+    so it can handle any kind of objects.
     """
 
-    def __init__(self, list_attr):
-
-        self.list_attr = list_attr
+    def __init__(self):
 
         self.objs = []
-
-        self.max_len_attr = {}
-        for i in list_attr:
-            self.max_len_attr[i] = 0
 
 
     def add(self, obj):
@@ -239,6 +285,11 @@ class Container(object):
 
 
     def sort(self):
+        """
+        For this method to work, 
+        the objects being stored are expected
+        to have a method __cmp__( ) implemented
+        """
         self.objs.sort()
 
 
@@ -248,26 +299,32 @@ class Container(object):
            out.append(obj.get())
         return out
 
-    def __str__(self):
-
-        s = ''
-        for obj in self.objs:
-            s += obj.__str__()
-
-        if len(s)>0:
-            # this is to remove the very last \n
-            s = s[:-1]
-  
-        return s
+    ###def __str__(self):
+    ###    s = ''
+    ###    for obj in self.objs:
+    ###        s += obj.__str__()
+    ###    if len(s)>0:
+    ###        # this is to remove the very last \n
+    ###        s = s[:-1]
+    ###    return s
 
 
-class MyClass(Execution, UI):
+class QueryUI(Query, UI):
+    """
+    this class just put together
+    the class Query( ), which runs the queries
+    and manage the output, 
+    and class UI( ), which knows how to print out
+    that content to the stdout
+    """
     pass
+    # FIXME ??? do I need to do something here ???
+
 
 if __name__ == '__main__':
 
-    exe = MyClass()
-    exe.run()
-    exe.display()
+    queryui = QueryUI()
+    queryui.run()
+    queryui.display()
 
 
