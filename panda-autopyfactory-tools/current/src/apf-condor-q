@@ -33,25 +33,31 @@ class Execution(object):
                                   'ec2amiid', 
                                   'match_apf_queue']
 
+        self.container = Container(self.output_attributes)
+
 
     def run(self):
 
-        schedd = htcondor.Schedd()
-        out = schedd.query('true', self.query_attributes)
-        
-        self.container = Container(self.output_attributes)
+        self._query()
+        self._store()
 
-        for job_classad in out:
+
+    def _query(self):
+
+        schedd = htcondor.Schedd()
+        self.out = schedd.query('true', self.query_attributes)
+
+
+    def _store(self):
+        
+        for job_classad in self.out:
             new_job = Job(job_classad, self)
             self.container.add(new_job)
 
 
-    def output(self):
+    def get(self):
         self.container.sort()
-
-        # FIXME
-        # output should not return a string, I think
-        return self.container.__str__()
+        return self.container.get()
 
 
 
@@ -137,6 +143,10 @@ class Job(object):
         else:
             return 0
 
+    def get(self):
+        #print [getattr(self,att) for att in self.container.list_attr]
+        return [getattr(self,att) for att in self.container.list_attr]
+        
 
     def __str__(self):
         """
@@ -201,32 +211,20 @@ class Container(object):
 
 
     def add(self, obj):
-        """
-        every time we add a new object to the list,
-        we also need to
-            1) add to the object a reference to this container
-            2) recalculate the maximum length for the several
-               fields that object will have in the output string
-               ( listed in self.list_attr )  
-        """
 
         obj.container = self
         self.objs.append(obj)
-        self._recalculate_max(obj)
 
-
-    def _recalculate_max(self, obj):
-
-        for k in self.max_len_attr.keys():
-           v = getattr(obj, k)
-           obj_attr_len = len(v)
-           if obj_attr_len > self.max_len_attr[k]:
-               self.max_len_attr[k] = obj_attr_len 
-               
 
     def sort(self):
         self.objs.sort()
 
+
+    def get(self):
+        out = []
+        for obj in self.objs:
+           out.append(obj.get())
+        return out
 
     def __str__(self):
 
@@ -246,6 +244,24 @@ if __name__ == '__main__':
 
     exe = Execution()
     exe.run()
-    print exe.output()
+    out = exe.get()
 
+
+    # FIXME
+    #   (1) check first that out has content
+    #   (2) printing the output maybe should be in an ExecutionCLI class:
+    #       -- child of Execution
+    #       -- child of some sort of generic CLI class
+    maxs = []
+   
+    for i in range(len(out[0])):
+        maxs.append(len(max(out[j][i] for j in range(len(out)))))
+    
+    
+    for line in out:
+        s = ""
+        for i in range(len(line)):
+            s += "%s  " %line[i]
+            s += " " * (maxs[i] - len(line[i]) )
+        print s
 
