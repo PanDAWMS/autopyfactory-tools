@@ -60,6 +60,28 @@ class Execution(object):
         return self.container.get()
 
 
+class UI(object):
+
+    def display(self):
+
+    out = self.get()
+
+        if len(out) == 0:
+            return ""
+        
+        # if there is actual content in out...
+        maxs = []
+        for i in range(len(out[0])):
+            maxs.append(len(max(out[j][i] for j in range(len(out)))))
+
+        for line in out:
+            s = ""
+            for i in range(len(line)):
+                s += "%s  " %line[i]
+                s += " " * (maxs[i] - len(line[i]) )
+            print s
+
+
 
 class Job(object):
 
@@ -239,29 +261,13 @@ class Container(object):
         return s
 
 
+class MyClass(Execution, UI):
+    pass
 
 if __name__ == '__main__':
 
-    exe = Execution()
+    exe = MyClass()
     exe.run()
-    out = exe.get()
+    exe.display()
 
-
-    # FIXME
-    #   (1) check first that out has content
-    #   (2) printing the output maybe should be in an ExecutionCLI class:
-    #       -- child of Execution
-    #       -- child of some sort of generic CLI class
-    maxs = []
-   
-    for i in range(len(out[0])):
-        maxs.append(len(max(out[j][i] for j in range(len(out)))))
-    
-    
-    for line in out:
-        s = ""
-        for i in range(len(line)):
-            s += "%s  " %line[i]
-            s += " " * (maxs[i] - len(line[i]) )
-        print s
 
