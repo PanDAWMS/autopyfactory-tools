@@ -59,8 +59,8 @@ class Slot(object):
         s+=' ' *(self.wholeslot.wholeslotlist.maxec2publicdns - len(self.ec2publicdns))
         s+=' %s' % self.ec2amiid
 
-        if self.slottype == 'Partitionable':
-            s = '%s%s%s' %(BColors.FAIL, s, BColors.ENDC)
+        #if self.slottype == 'Partitionable':
+        #    s = '%s%s%s' %(BColors.FAIL, s, BColors.ENDC)
 
         s+='\n'
 
