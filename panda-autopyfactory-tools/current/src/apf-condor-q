@@ -47,8 +47,40 @@ class Query(object):
     def _store(self):
         
         for job_classad in self.out:
-            new_job = Job(job_classad, self)
+            dict_attr = self._clean(job_classad)
+            new_job = Job(dict_attr)
             self.container.add(new_job)
+
+
+    def _clean(self, job_classad):
+        """
+        this method is to clean the dictionary in the classad
+
+        The output returned by htcondor python query( ) methods 
+        may contain more key:value pairs that we want
+
+        Also, some of them could be missing, so we add a 
+             "undefined"
+        string in it.
+
+        Also, we force all values to be strings. 
+        The output of query( ) methods sometimes include integers
+        and floats. 
+        We convert them to strings. 
+        It is up to the class to digest the output to treat them
+        in a different way if needed.    
+
+        And finally, we force all variables and values to be lower case
+        """
+
+        dict_attr = {}
+        for attr in self.query_attributes:
+            key = attr.lower()
+        value = job_classad.get(attr, "undefined")
+            value = str(value)
+            value = value.lower() 
+            dict_attr[key] = value
+        return dict_attr
 
 
     def get(self):
@@ -125,19 +157,13 @@ class Job(object):
     the output of the query done in class Query( )
     """
 
-    def __init__(self, job_classad, query):
+    def __init__(self, dict_attr):
         """
-        job_classad is each one of the objects returned by htcondor.Schedd().query() method
+        attr_dict is each one of the objects returned by htcondor.Schedd().query() method
         query is a "pointer" to the class Query that creates all Job() objects
-    We use a reference to Query( ) class 
-        because it contains a list of the classad attributes
-        being used in the query, 
-        which is the list of attributes in the job_classad input variable,
-        so we know what is each field in job_classad
         """
 
-        self.query = query
-        self.job_classad = job_classad
+        self.dict_attr = dict_attr
 
         # this is the list of attributes, or fields,  
         # we want to display in the output
@@ -156,60 +182,54 @@ class Job(object):
 
     def _create_attributes(self):
         """ 
-        add a class attribute for each item in list_attributes
-        the name of the class attribute is just the lower case version of the value in list_attributes
+        add a class attribute for each item in self.dict_attr
         For example:
 
-              self.clusterid = self.job_classad['ClusterId']
-              self.procid = self.job_classad['ProcId'] 
-              self.owner = self.job_classad['Owner'] 
-              self.qdate = self.job_classad['QDate'] 
-              self.cmd = self.job_classad['Cmd'] 
-              self.jobstatus = self.job_classad['JobStatus']
-              self.enteredcurrentstatus = self.job_classad['EnteredCurrentStatus'] 
-              self.ec2amiid = self.job_classad['EC2AmiID'] 
-              self.match_apf_queue = self.job_classad['MATCH_APF_QUEUE']
+              self.clusterid = self.attr_dict['clusterId']
+              self.procid = self.attr_dict['procid'] 
+              self.owner = self.attr_dict['owner'] 
+              Self.qdate = self.attr_dict['qdate'] 
+              self.cmd = self.attr_dict['cmd'] 
+              self.jobstatus = self.attr_dict['jobstatus']
+              self.enteredcurrentstatus = self.attr_dict['enteredcurrentstatus'] 
+              self.ec2amiid = self.attr_dict['ec2amiid'] 
+              self.match_apf_queue = self.attr_dict['match_apf_queue']
               ...
 
-        This can be done also with a dictionary,
-        like self.dict_attr[ key ] = value
-        but then the rest of the code is filled with stuff like
+        NOTE: this is not striclty needed.
+              We can manage directly dict_attr dictionary, 
+              but then the rest of the code is filled with stuff like
  
-           self.dict_attr[key] 
+                 self.dict_attr[key] 
 
-        instead of
+              instead of
 
-           self.key
+                 self.key
 
-        Using class attributes seems to be a little bit cleaner.
-        That is the only reason to do it this way.
-
-        If some of the fields was not included in the query output,
-        we give string "undefined" to it. 
-        We do that, because we want all fields always to have a content,
-        so when they are displayed, all columns exists.
+              Using class attributes seems to be a little bit cleaner.
+              That is the ONLY reason to do it this way.
         """ 
         
-        for att in self.query.query_attributes:
-            setattr(self, att.lower(), self.job_classad.get(att, "undefined" ))
+        for key, value in self.dict_attr.iteritems():
+             setattr(self, key, value)
 
     
     def _parseattributes(self):
         """
         in this method we manipulate the content 
-        of the job_classad input variables
+        of the attr_dict input variables
         to build the final output with the format we want
         """
 
         self.id = '%s.%s' %(self.clusterid, self.procid)
 
-        status_mappings = {0: 'U', 
-                           1: 'I',
-                           2: 'R',
-                           3: 'X',
-                           4: 'C',
-                           5: 'H',
-                           6: 'E'}
+        status_mappings = {'0': 'U', 
+                           '1': 'I',
+                           '2': 'R',
+                           '3': 'X',
+                           '4': 'C',
+                           '5': 'H',
+                           '6': 'E'}
         self.jobstatus = status_mappings[self.jobstatus]
 
         if self.jobstatus == 'R':
