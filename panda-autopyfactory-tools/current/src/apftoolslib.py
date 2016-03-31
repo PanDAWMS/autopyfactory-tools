@@ -12,18 +12,37 @@ import htcondor
 
 class CondorQuery(object):
     """
+    This class is a common interface for all classes implementing 
+    HTCondor queries (condor_q, condor_status, ...)
+    It contains the common functionalities.
+    For the specific implementation of the query, 
+    there should be child classes.
+    That query code is to be implemented in method
 
-    This is the class that implements the HTCondor query.
-    It just does that, it does not interpret the output of the query,
-    for each line in the output, it creates an object of class Job() 
-    and feed it with that line. 
-    The object Job( ) is supposed to know how to interpret and manipulate
-    the content of the output of the HTCondor query.
+       _query( )
+
+    Neither this class or any of the children ones 
+    are meant to interpret the output of the query.
+    For that, the class hosts a list of objects,
+    one per line in the output of the query.
+    Each type of these objects represents the meaning
+    of the particular query: a job, a slot, etc.
+    Those objects are the ones that must know how to 
+    process the output of the query.
+
+    As this class host a list of these objects, 
+    but they can be of different classes, 
+    the __init__( ) accepts a class as input option:
+
+       ItemType
+
+    When instantiaing objects of CondorQuery's children,
+    the exact class (Job, Slot...) needs to be passed.
     """
 
+    def __init__(self, ItemType):
 
-    def __init__(self):
-
+        self.ItemType = ItemType
         self.container = Container()
 
 
@@ -41,13 +60,12 @@ class CondorQuery(object):
         
         for job_classad in self.out:
             dict_attr = self._clean(job_classad)
-            new_job = Job(dict_attr)
-            self.container.add(new_job)
+            new_item = self.ItemType(dict_attr)
+            self.container.add(new_item)
 
 
     def _clean(self, job_classad):
         """
-
         this method is to clean the dictionary in the classad
 
         The output returned by htcondor python query( ) methods 
@@ -67,7 +85,6 @@ class CondorQuery(object):
         And finally, we force all variables and values to be lower case
         """
 
-
         dict_attr = {}
         for attr in self.query_attributes:
             key = attr.lower()
@@ -79,6 +96,7 @@ class CondorQuery(object):
 
 
     def get(self):
+
         self.container.sort()
         return self.container.get()
 
@@ -98,12 +116,41 @@ class condorq(CondorQuery):
                                 'EC2AmiID', 
                                 'MATCH_APF_QUEUE']
 
-        super(condorq, self).__init__()
+        super(condorq, self).__init__(Job)
 
 
     def _query(self):
         schedd = htcondor.Schedd()
         self.out = schedd.query('true', self.query_attributes)
+
+
+class condorstatus(CondorQuery):
+
+    def __init__(self):
+
+        # this is the list of HTCondor startd's ClassAds to query 
+        self.query_attributes = ['Name',
+                                 'SlotID',
+                                 'State',
+                                 'Activity',
+                                 'NodeType',
+                                 'LoadAvg',
+                                 'RemoteGroup',
+                                 'EC2InstanceID',
+                                 'EC2PublicDNS',
+                                 'EC2AMIID',
+                                 'SlotType']
+
+        super(condorstatus, self).__init__(Slot)
+
+    def _query(self):
+
+        collector_name = htcondor.param.get('COLLECTOR_HOST')
+        collector = htcondor.Collector(collector_name)
+        self.out = collector.query(htcondor.AdTypes.Startd, "true", self.query_attributes)
+
+
+
 
 
 # =============================================================================
@@ -113,14 +160,12 @@ class condorq(CondorQuery):
 
 class Container(object):
     """
-
     This class is just a container of objects.
     It is actually a completely abstract class
     so it can handle any kind of objects.
 
     NOTE: this is just legacy code, most probably it can be eliminated
     """
-
 
     def __init__(self):
 
@@ -133,12 +178,10 @@ class Container(object):
 
     def sort(self):
         """
-
         For this method to work, 
         the objects being stored are expected
         to have a method __cmp__( ) implemented
         """
-
         self.objs.sort()
 
     def get(self):
@@ -148,43 +191,26 @@ class Container(object):
         return out
 
 
-class Job(object):
-    """
-
-    This is the class to handle each Job.
-    Therefore, this is the class that knows how to interpret and manipulate
-    the output of the query done in class Query( )
-    """
-
+class Item(object):
 
     def __init__(self, dict_attr):
-        """
-
-        attr_dict is each one of the objects returned by htcondor.Schedd().query() method
-        query is a "pointer" to the class Query that creates all Job() objects
-        """
-
 
         self.dict_attr = dict_attr
 
-        # this is the list of attributes, or fields,  
-        # we want to display in the output
-        self.list_attr = ['id', 
-                          'owner', 
-                          'qdate', 
-                          'cmd', 
-                          'jobstatus', 
-                          'enteredcurrentstatus', 
-                          'ec2amiid', 
-                          'match_apf_queue']
-  
         self._create_attributes()
         self._format()
 
 
+    def _format(self):
+        raise NotImplementedError
+
+
+    def __cmp__(self):
+        raise NotImplementedError
+
+
     def _create_attributes(self):
-        """
- 
+        """ 
         add a class attribute for each item in self.dict_attr
         For example:
 
@@ -211,21 +237,46 @@ class Job(object):
 
               Using class attributes seems to be a little bit cleaner.
               That is the ONLY reason to do it this way.
-        """
- 
-        
+        """ 
         for key, value in self.dict_attr.iteritems():
              setattr(self, key, value)
+
+
+    def get(self):
+        return [getattr(self,att) for att in self.list_attr]
+
+
+
+class Job(Item):
+    """
+    This is the class to handle each Job.
+    """
+
+    def __init__(self, dict_attr):
+        """
+        attr_dict is each one of the objects returned by HTCondor query
+        """
+
+        # this is the list of attributes, or fields,  
+        # we want to display in the output
+        self.list_attr = ['id', 
+                          'owner', 
+                          'qdate', 
+                          'cmd', 
+                          'jobstatus', 
+                          'enteredcurrentstatus', 
+                          'ec2amiid', 
+                          'match_apf_queue']
+  
+        super(Job, self).__init__(dict_attr)
 
     
     def _format(self):
         """
-
         in this method we manipulate the content 
         of the attr_dict input variables
         to build the final output with the format we want
         """
-
 
         self.id = '%s.%s' %(self.clusterid, self.procid)
 
@@ -256,10 +307,8 @@ class Job(object):
 
     def __cmp__(self, other):
         """
-
         to sort all jobs by id number
         """
-
 
         if self.id < other.id:
             return -1
@@ -269,9 +318,45 @@ class Job(object):
             return 0
 
 
-    def get(self):
-        return [getattr(self,att) for att in self.list_attr]
-        
+class Slot(Item):
+    """
+    This is the class to handle each Slot
+    """
+
+    def __init__(self, dict_attr):
+        """
+        attr_dict is each one of the objects returned by HTCondor query
+        """
+
+        # this is the list of attributes, or fields,  
+        # we want to display in the output
+        self.list_attr = ['name',
+                          'slotid',
+                          'state',
+                          'activity',
+                          'nodetype',
+                          'loadavg',
+                          'remotegroup',
+                          'ec2instanceid',
+                          'ec2publicdns',
+                          'ec2amiid']
+  
+        super(Slot, self).__init__(dict_attr)
+
+
+    def _format(self):
+
+        (slot, machine) = self.name.split("@")
+        self.name = '%s:%s' %(machine, slot)
+        if self.slottype == 'dynamic':
+            self.name = '      %s' %self.name
+
+
+    def __cmp__(self, other):
+        """
+        for the time being, we just leave things as they are
+        """
+        return 1
 
 
 # =============================================================================
@@ -281,7 +366,6 @@ class Job(object):
 
 def printable(matrix):
     """
-
     this function is just to get a printable version of the content
     being handle
 
@@ -294,7 +378,6 @@ def printable(matrix):
     reach the maximum previously calculated for that field.
     That way, all fields are always displayed well aligned. 
     """
-
 
     if len(matrix) == 0:
         return ""
@@ -320,24 +403,3 @@ def printable(matrix):
     s = s[:-1] # to remove the last \n
     return s
 
-
-    """
-    """
-        """
-        """
-        """
-        """
-        """
-        """
-        """
-        """
-    """
-    """
-        """
-        """
-    """
-    """
-        """
-        """
-    """
-    """
