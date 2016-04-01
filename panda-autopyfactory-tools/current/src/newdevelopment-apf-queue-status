@@ -1,0 +1,126 @@
+#!/bin/env python
+
+import copy
+import htcondor
+
+
+class queuestatus:
+    def __init__(self):
+
+        # this is the list of HTCondor Job's ClassAds to query 
+        self.query_attributes = ['JobStatus',
+                                 'MATCH_APF_QUEUE']
+
+        #super(condorq, self).__init__(Job)
+
+
+    def _query(self):
+        schedd = htcondor.Schedd()
+        self.out = schedd.query('true', self.query_attributes)
+        #for q in self.out:
+        #    print q['match_apf_queue'], q['jobstatus']
+
+        self._aggregateinfo()
+
+
+    def _aggregateinfo(self):
+
+        emptyd = {'0' : 0,
+                  '1' : 0,
+                  '2' : 0,
+                  '3' : 0,
+                  '4' : 0,
+                  '5' : 0,
+                  '6' : 0}
+                  
+
+        queues = {}
+        for job in self.out:
+            if not 'MATCH_APF_QUEUE' in job.keys():
+                # This job is not managed by APF. Ignore...
+                continue
+            apfqname = job['match_apf_queue']
+            if apfqname not in queues.keys():
+                queues[apfqname] = copy.copy(emptyd)
+
+            jobstatus = str(job['jobstatus'])
+
+            queues[apfqname][jobstatus] += 1
+            
+
+        self.out = queues
+
+    def converttotable(self):
+
+        order = ['0', '1', '2', '3', '4', '5', '6']
+        status_mappings = {'0': 'U',
+                           '1': 'I',
+                           '2': 'R',
+                           '3': 'X',
+                           '4': 'C',
+                           '5': 'H',
+                           '6': 'E'}
+
+        # convert the dict of dicts 
+        # into a      list of lists
+
+        l = []
+
+        for match_apf_queue in self.out.keys():
+            newl = []
+            newl.append(match_apf_queue)
+            for job_status in order:
+                #job_status_str = '%s=%s' %(status_mappings[job_status], self.out[match_apf_queue][job_status])
+                job_status_str = '%s' %self.out[match_apf_queue][job_status]
+                newl.append(job_status_str)
+            l.append(newl)
+
+        self.out = l 
+
+
+
+    def printable(self):
+        """
+        this function is just to get a printable version of the content
+        being handle
+    
+        We calculate, the maximum lenght for each field 
+        -in other words, each item at position i for each list-.
+        Then we just double loop over the list of lists, 
+        print each field, and the needed number of white spaces to 
+        reach the maximum previously calculated for that field.
+        That way, all fields are always displayed well aligned. 
+        """
+
+        matrix = self.out  # FIXME ???
+
+        if len(matrix) == 0:
+            return ""
+
+        # if there is actual content in the matrix...
+
+        # 1. first we calculate the maximum lengths
+        maxs = []
+        for i in range(len(matrix[0])):
+            # max length for field i on every line in out:
+            max_i = max(len(line[i]) for line in matrix)
+            maxs.append(max_i)
+
+        # 2. then we double loop over the matrix 
+
+        s = ""
+        for line in matrix:
+            for i in range(len(line)):
+                s += "%s  " %line[i]
+                s += " " * (maxs[i] - len(line[i]))
+            s += '\n'
+
+        s = s[:-1] # to remove the last \n
+        return s
+
+
+
+qs = queuestatus()
+qs._query()
+qs.converttotable()
+print qs.printable()
