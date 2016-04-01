@@ -1,9 +1,8 @@
 #!/bin/env python
 
-from apftoolslib import condorq, printable
+from apftoolslib import condorq
 
 cq = condorq()
 cq.run()
-out = cq.get()
-print printable(out)
+print cq.printable()
 

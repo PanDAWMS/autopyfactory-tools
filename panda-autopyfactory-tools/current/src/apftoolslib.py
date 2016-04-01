@@ -88,7 +88,7 @@ class CondorQuery(object):
         dict_attr = {}
         for attr in self.query_attributes:
             key = attr.lower()
-        value = job_classad.get(attr, "undefined")
+            value = job_classad.get(attr, "undefined")
             value = str(value)
             value = value.lower() 
             dict_attr[key] = value
@@ -99,6 +99,50 @@ class CondorQuery(object):
 
         self.container.sort()
         return self.container.get()
+
+
+    def printable(self):
+        """
+        this method is just to get a printable version of the content
+        being handle
+    
+        We calculate, the maximum lenght for each field 
+        -in other words, each item at position i for each list-.
+        Then we just double loop over the list of lists, 
+        print each field, and the needed number of white spaces to 
+        reach the maximum previously calculated for that field.
+        That way, all fields are always displayed well aligned. 
+        """
+
+        matrix = self.get()
+
+ 
+        if len(matrix) == 0:
+            return ""
+        
+        # if there is actual content in the matrix...
+    
+        # 1. first we calculate the maximum lengths
+        maxs = []
+        for i in range(len(matrix[0])):
+            # max length for field i on every line in out:
+            max_i = max(len(line[i]) for line in matrix)
+            maxs.append(max_i)
+    
+        # 2. then we double loop over the matrix 
+    
+        s = ""
+        for line in matrix:
+            for i in range(len(line)):
+                s += "%s  " %line[i]
+                s += " " * (maxs[i] - len(line[i]))
+            s += '\n'
+    
+        s = s[:-1] # to remove the last \n
+        return s
+
+
+
 
 
 class condorq(CondorQuery):
@@ -357,49 +401,4 @@ class Slot(Item):
         for the time being, we just leave things as they are
         """
         return 1
-
-
-# =============================================================================
-#                        INTERFACES CLASSES AND FUNCTIONS
-# =============================================================================
-
-
-def printable(matrix):
-    """
-    this function is just to get a printable version of the content
-    being handle
-
-    It assumes the matrix is a list of lists
-
-    We calculate, the maximum lenght for each field 
-    -in other words, each item at position i for each list-.
-    Then we just double loop over the list of lists, 
-    print each field, and the needed number of white spaces to 
-    reach the maximum previously calculated for that field.
-    That way, all fields are always displayed well aligned. 
-    """
-
-    if len(matrix) == 0:
-        return ""
-    
-    # if there is actual content in the matrix...
-
-    # 1. first we calculate the maximum lengths
-    maxs = []
-    for i in range(len(matrix[0])):
-        # max length for field i on every line in out:
-        max_i = max(len(line[i]) for line in matrix)
-        maxs.append(max_i)
-
-    # 2. then we double loop over the matrix 
-
-    s = ""
-    for line in matrix:
-        for i in range(len(line)):
-            s += "%s  " %line[i]
-            s += " " * (maxs[i] - len(line[i]))
-        s += '\n'
-
-    s = s[:-1] # to remove the last \n
-    return s
 

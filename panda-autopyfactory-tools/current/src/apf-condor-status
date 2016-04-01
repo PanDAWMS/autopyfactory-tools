@@ -1,9 +1,8 @@
 #!/bin/env python
 
-from apftoolslib import condorstatus, printable
+from apftoolslib import condorstatus
 
 cs = condorstatus()
 cs.run()
-out = cs.get()
-print printable(out)
+print cs.printable()
 
