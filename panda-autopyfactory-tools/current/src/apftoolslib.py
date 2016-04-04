@@ -12,6 +12,7 @@ import htcondor
 
 class CondorQuery(object):
     """
+
     This class is a common interface for all classes implementing 
     HTCondor queries (condor_q, condor_status, ...)
     It contains the common functionalities.
@@ -29,20 +30,11 @@ class CondorQuery(object):
     of the particular query: a job, a slot, etc.
     Those objects are the ones that must know how to 
     process the output of the query.
-
-    As this class host a list of these objects, 
-    but they can be of different classes, 
-    the __init__( ) accepts a class as input option:
-
-       ItemType
-
-    When instantiaing objects of CondorQuery's children,
-    the exact class (Job, Slot...) needs to be passed.
     """
 
-    def __init__(self, ItemType):
 
-        self.ItemType = ItemType
+    def __init__(self):
+
         self.container = Container()
 
 
@@ -57,15 +49,57 @@ class CondorQuery(object):
 
 
     def _store(self):
-        
-        for job_classad in self.out:
-            dict_attr = self._clean(job_classad)
-            new_item = self.ItemType(dict_attr)
-            self.container.add(new_item)
+        """
+
+        The code for this method is always almost the same. 
+        It will look like this
+
+            def _store(self):
+                for job_classad in self.out:
+                    dict_attr = self._clean(job_classad)
+                    new_item = XYZ(dict_attr)
+                    self.container.add(new_item)
+
+        where XYZ is the actual kind of objects being stored:
+        Job()'s, Slot()'s, ...
+     
+        We force this method to be implemented by the child classes
+        because if will add objects to the self.container list,
+        but these objects are of different classes each time:
+           Job, Slot, ...
+        So, to have it implemented here, we would need a way to pass
+        it somehow. For example, passing the class to the __init__
+        via the super( ) call. Something like this
+
+           class Child:
+               def __init__(self):
+                   super(Child, self).__init__(Job)
+     
+        and this class will receive it, like this
+
+           class CondorQuery:
+               def __init__(self, ItemType):
+                   self.ItemType = ItemType
+
+               def _store(self):
+                   for job_classad in self.out:
+                       dict_attr = self._clean(job_classad)
+                       new_item = ItemType(dict_attr)
+                       self.container.add(new_item)
+
+        Another way would be passing a string, and from there
+        getting the right object like a plugin. 
+
+        In any case, forcing it to be re-implemented on every child
+        class seems to be a little bit cleaner
+        """
+
+        raise NotImplementedError
 
 
     def _clean(self, job_classad):
         """
+
         this method is to clean the dictionary in the classad
 
         The output returned by htcondor python query( ) methods 
@@ -85,6 +119,7 @@ class CondorQuery(object):
         And finally, we force all variables and values to be lower case
         """
 
+
         dict_attr = {}
         for attr in self.query_attributes:
             key = attr.lower()
@@ -103,6 +138,7 @@ class CondorQuery(object):
 
     def printable(self):
         """
+
         this method is just to get a printable version of the content
         being handle
     
@@ -113,6 +149,7 @@ class CondorQuery(object):
         reach the maximum previously calculated for that field.
         That way, all fields are always displayed well aligned. 
         """
+
 
         matrix = self.get()
 
@@ -160,12 +197,18 @@ class condorq(CondorQuery):
                                 'EC2AmiID', 
                                 'MATCH_APF_QUEUE']
 
-        super(condorq, self).__init__(Job)
+        super(condorq, self).__init__()
 
 
     def _query(self):
         schedd = htcondor.Schedd()
         self.out = schedd.query('true', self.query_attributes)
+
+    def _store(self):
+        for job_classad in self.out:
+            dict_attr = self._clean(job_classad)
+            new_item = Job(dict_attr)
+            self.container.add(new_item)
 
 
 class condorstatus(CondorQuery):
@@ -185,13 +228,20 @@ class condorstatus(CondorQuery):
                                  'EC2AMIID',
                                  'SlotType']
 
-        super(condorstatus, self).__init__(Slot)
+        super(condorstatus, self).__init__()
 
     def _query(self):
 
         collector_name = htcondor.param.get('COLLECTOR_HOST')
         collector = htcondor.Collector(collector_name)
         self.out = collector.query(htcondor.AdTypes.Startd, "true", self.query_attributes)
+
+
+    def _store(self):
+        for job_classad in self.out:
+            dict_attr = self._clean(job_classad)
+            new_item = Slot(dict_attr)
+            self.container.add(new_item)
 
 
 
@@ -204,12 +254,14 @@ class condorstatus(CondorQuery):
 
 class Container(object):
     """
+
     This class is just a container of objects.
     It is actually a completely abstract class
     so it can handle any kind of objects.
 
     NOTE: this is just legacy code, most probably it can be eliminated
     """
+
 
     def __init__(self):
 
@@ -222,10 +274,12 @@ class Container(object):
 
     def sort(self):
         """
+
         For this method to work, 
         the objects being stored are expected
         to have a method __cmp__( ) implemented
         """
+
         self.objs.sort()
 
     def get(self):
@@ -254,7 +308,8 @@ class Item(object):
 
 
     def _create_attributes(self):
-        """ 
+        """
+ 
         add a class attribute for each item in self.dict_attr
         For example:
 
@@ -281,7 +336,8 @@ class Item(object):
 
               Using class attributes seems to be a little bit cleaner.
               That is the ONLY reason to do it this way.
-        """ 
+        """
+ 
         for key, value in self.dict_attr.iteritems():
              setattr(self, key, value)
 
@@ -293,13 +349,17 @@ class Item(object):
 
 class Job(Item):
     """
+
     This is the class to handle each Job.
     """
 
+
     def __init__(self, dict_attr):
         """
+
         attr_dict is each one of the objects returned by HTCondor query
         """
+
 
         # this is the list of attributes, or fields,  
         # we want to display in the output
@@ -317,10 +377,12 @@ class Job(Item):
     
     def _format(self):
         """
+
         in this method we manipulate the content 
         of the attr_dict input variables
         to build the final output with the format we want
         """
+
 
         self.id = '%s.%s' %(self.clusterid, self.procid)
 
@@ -351,8 +413,10 @@ class Job(Item):
 
     def __cmp__(self, other):
         """
+
         to sort all jobs by id number
         """
+
 
         if self.id < other.id:
             return -1
@@ -364,13 +428,17 @@ class Job(Item):
 
 class Slot(Item):
     """
+
     This is the class to handle each Slot
     """
 
+
     def __init__(self, dict_attr):
         """
+
         attr_dict is each one of the objects returned by HTCondor query
         """
+
 
         # this is the list of attributes, or fields,  
         # we want to display in the output
@@ -398,7 +466,38 @@ class Slot(Item):
 
     def __cmp__(self, other):
         """
+
         for the time being, we just leave things as they are
         """
+
         return 1
 
+
+        """
+        """
+        """
+        """
+    """
+    """
+        """
+        """
+        """
+        """
+        """
+        """
+    """
+    """
+        """
+        """
+        """
+        """
+    """
+    """
+        """
+        """
+        """
+        """
+        """
+        """
+    """
+    """
