@@ -41,6 +41,7 @@ class CondorQuery(object):
 
         self._query()
         self._store()
+        self._sort()
 
 
     def _query(self):
@@ -125,9 +126,11 @@ class CondorQuery(object):
         return dict_attr
 
 
-    def get(self):
-
+    def _sort(self):
         self.container.sort()
+
+
+    def get(self):
         return self.container.get()
 
 
