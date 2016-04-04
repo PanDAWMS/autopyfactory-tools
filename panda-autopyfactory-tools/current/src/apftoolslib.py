@@ -328,11 +328,15 @@ class Container(object):
     def __init__(self):
 
         self.objs = []
+        self.headers = []
 
     def add(self, obj):
 
         obj.container = self
         self.objs.append(obj)
+        if not self.headers:
+            # this is the first object being added
+            self.headers = obj.list_attr
 
     def sort(self):
         """
