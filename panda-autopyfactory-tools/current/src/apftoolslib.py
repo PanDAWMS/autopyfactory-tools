@@ -6,7 +6,6 @@ import time
 
 import htcondor
 
-
 # =============================================================================
 #                        CONDOR CLASSES
 # =============================================================================
@@ -32,9 +31,10 @@ class CondorQuery(object):
     process the output of the query.
     """
 
-    def __init__(self):
+    def __init__(self, args=None):
 
-        self.container = Container()
+        self.args = args
+        self.container = Container(self)
 
 
     def run(self):
@@ -42,7 +42,6 @@ class CondorQuery(object):
         self._query()
         self._store()
         self._sort()
-
 
     def _query(self):
         raise NotImplementedError
@@ -125,10 +124,8 @@ class CondorQuery(object):
             dict_attr[key] = value
         return dict_attr
 
-
     def _sort(self):
         self.container.sort()
-
 
     def get(self):
         return self.container.get()
@@ -149,7 +146,6 @@ class CondorQuery(object):
 
         matrix = self.get()
 
- 
         if len(matrix) == 0:
             return ""
         
@@ -180,7 +176,7 @@ class CondorQuery(object):
 
 class condorq(CondorQuery):
 
-    def __init__(self):
+    def __init__(self, args=None):
 
         # this is the list of HTCondor Job's ClassAds to query 
         self.query_attributes = ['ClusterId', 
@@ -193,7 +189,7 @@ class condorq(CondorQuery):
                                 'EC2AmiID', 
                                 'MATCH_APF_QUEUE']
 
-        super(condorq, self).__init__()
+        super(condorq, self).__init__(args)
 
 
     def _query(self):
@@ -209,7 +205,7 @@ class condorq(CondorQuery):
 
 class condorstatus(CondorQuery):
 
-    def __init__(self):
+    def __init__(self, args=None):
 
         # this is the list of HTCondor startd's ClassAds to query 
         self.query_attributes = ['Name',
@@ -224,7 +220,7 @@ class condorstatus(CondorQuery):
                                  'EC2AMIID',
                                  'SlotType']
 
-        super(condorstatus, self).__init__()
+        super(condorstatus, self).__init__(args)
 
     def _query(self):
 
@@ -244,13 +240,18 @@ class condorstatus(CondorQuery):
 
 class queuestatus(CondorQuery):
 
-    def __init__(self):
+    def __init__(self, args=None):
 
         # this is the list of HTCondor Job's ClassAds to query 
         self.query_attributes = ['JobStatus',
                                  'MATCH_APF_QUEUE']
 
-        super(queuestatus, self).__init__()
+        super(queuestatus, self).__init__(args)
+
+
+    def printable(self):
+
+        return super(queuestatus, self).printable()
 
 
     def _query(self):
@@ -325,8 +326,9 @@ class Container(object):
     NOTE: this is just legacy code, most probably it can be eliminated
     """
 
-    def __init__(self):
+    def __init__(self, query):
 
+        self.query = query
         self.objs = []
         self.headers = []
 
@@ -338,6 +340,7 @@ class Container(object):
             # this is the first object being added
             self.headers = obj.list_attr
 
+
     def sort(self):
         """
         For this method to work, 
@@ -346,9 +349,12 @@ class Container(object):
         """
         self.objs.sort()
 
+
     def get(self):
+
         out = []
-        ### out.append(self.headers)
+        if self.query.args.headers == True:
+            out.append(self.headers)
         for obj in self.objs:
            out.append(obj.get())
         return out
@@ -566,5 +572,4 @@ class Queue(Item):
             return 1
         else:
             return 0
-
 
