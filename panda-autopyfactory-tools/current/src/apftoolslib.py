@@ -199,7 +199,7 @@ class condorq(CondorQuery):
     def _store(self):
         for job_classad in self.out:
             dict_attr = self._clean(job_classad)
-            new_item = Job(dict_attr)
+            new_item = Job(dict_attr, self.args)
             self.container.add(new_item)
 
 
@@ -232,7 +232,7 @@ class condorstatus(CondorQuery):
     def _store(self):
         for job_classad in self.out:
             dict_attr = self._clean(job_classad)
-            new_item = Slot(dict_attr)
+            new_item = Slot(dict_attr, self.args)
             self.container.add(new_item)
 
 
@@ -472,7 +472,7 @@ class Job(Item):
     This is the class to handle each Job.
     """
 
-    def __init__(self, dict_attr):
+    def __init__(self, dict_attr, args):
         """
         attr_dict is each one of the objects returned by HTCondor query
         """
@@ -540,7 +540,7 @@ class Slot(Item):
     This is the class to handle each Slot
     """
 
-    def __init__(self, dict_attr):
+    def __init__(self, dict_attr, args):
         """
         attr_dict is each one of the objects returned by HTCondor query
         """
