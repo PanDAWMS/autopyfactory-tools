@@ -337,18 +337,12 @@ class queuestatus(CondorQuery):
         if self.args.longest:
             for queue in queues.keys():
                 t = int(float( queues[queue]['longestrunning'] ))
-                days = t/(24*3600)
-                rest = t - days*24*3600
-                m, s = divmod(int(rest), 60)
-                h, m = divmod(m, 60)
-                queues[queue]['longestrunning'] = '%d+%02d:%02d:%02d' %(days, h, m, s)
+                newt = formattime(t)
+                queues[queue]['longestrunning'] = newt
 
                 t = int(float( queues[queue]['longestidle'] ))
-                days = t/(24*3600)
-                rest = t - days*24*3600
-                m, s = divmod(int(rest), 60)
-                h, m = divmod(m, 60)
-                queues[queue]['longestidle'] = '%d+%02d:%02d:%02d' %(days, h, m, s)
+                newt = formattime(t)
+                queues[queue]['longestidle'] = newt
 
         # for backwards compatibility
         if not self.args.new:
@@ -524,11 +518,8 @@ class Job(Item):
 
         self.qdate = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(float(self.qdate)))
 
-        days = self.timecurrentstatus/(24*3600)
-        rest = self.timecurrentstatus - days*24*3600
-        m, s = divmod(int(rest), 60)
-        h, m = divmod(m, 60)
-        self.enteredcurrentstatus= '%d+%02d:%02d:%02d' %(days, h, m, s)
+        newt = formattime(self.timecurrentstatus)
+        self.enteredcurrentstatus = newt
 
 
     def __cmp__(self, other):
@@ -585,12 +576,6 @@ class Slot(Item):
         return 1
 
 
-
-
-
-
-
-
 class Queue(Item):
     """
     This is the class to handle each Slot
@@ -642,4 +627,25 @@ class Queue(Item):
         else:
             return 0
 
+
+# =============================================================================
+#           COMMON UTILS
+# =============================================================================
+
+def formattime(secs):
+    """
+    convert a time, expressed in seconds,
+    into a nicer format:
+       D+HH:MM:SS
+    """
+
+
+    t = int(float(secs))  # just in case secs is a string
+
+    days, rest = divmod(t, 24*3600)
+    m, s = divmod(int(rest), 60)
+    h, m = divmod(m, 60)
+
+    newformat = '%d+%02d:%02d:%02d' %(days, h, m, s)
+    return newformat
 
