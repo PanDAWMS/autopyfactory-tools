@@ -5,9 +5,13 @@ from apftoolslib import queuestatus
 
 
 parser = argparse.ArgumentParser(description='Prints aggregated status info queue by queue')
+parser.add_argument("-N", "--new", help="new format", action="store_true")
 parser.add_argument("-H", "--headers", help="Prints the header of each column", action="store_true")
 parser.add_argument("-L", "--longest", help="Prints two additional columns with the longest waiting and running times", action="store_true")
 args = parser.parse_args()
+
+if args.headers or args.longest:
+    args.__dict__['new'] = True
 
 
 qs = queuestatus(args)

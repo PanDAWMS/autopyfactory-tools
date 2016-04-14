@@ -350,6 +350,12 @@ class queuestatus(CondorQuery):
                 h, m = divmod(m, 60)
                 queues[queue]['longestidle'] = '%d+%02d:%02d:%02d' %(days, h, m, s)
 
+        # for backwards compatibility
+        if not self.args.new:
+            for q in queues.keys():
+                for status in queues[q]:
+                    queues[q][status] = '%s = %s' %(status.upper(), queues[q][status])
+
         self.out = queues
 
 
