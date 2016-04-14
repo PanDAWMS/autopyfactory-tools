@@ -242,9 +242,16 @@ class queuestatus(CondorQuery):
 
     def __init__(self, args=None):
 
+        self.args = args
+
         # this is the list of HTCondor Job's ClassAds to query 
-        self.query_attributes = ['JobStatus',
-                                 'MATCH_APF_QUEUE']
+        if self.args.longest:
+            self.query_attributes = ['JobStatus',
+                                    'MATCH_APF_QUEUE',
+                                    'EnteredCurrentStatus']
+        else:
+            self.query_attributes = ['JobStatus',
+                                    'MATCH_APF_QUEUE']
 
         super(queuestatus, self).__init__(args)
 
@@ -272,13 +279,29 @@ class queuestatus(CondorQuery):
                            '5': 'held',
                            '6': 'error'}
 
-        emptydict = {'unsub'     : 0,
-                     'idle'      : 0,
-                     'running'   : 0,
-                     'removed'   : 0,
-                     'completed' : 0,
-                     'held'      : 0,
-                     'error'     : 0}
+        if self.args.longest:
+            emptydict = {'unsub'          : 0,
+                         'idle'           : 0,
+                         'running'        : 0,
+                         'removed'        : 0,
+                         'completed'      : 0,
+                         'held'           : 0,
+                         'error'          : 0,
+                         'longestidle'    : 0,
+                         'longestrunning' : 0,}
+        else:
+            emptydict = {'unsub'     : 0,
+                         'idle'      : 0,
+                         'running'   : 0,
+                         'removed'   : 0,
+                         'completed' : 0,
+                         'held'      : 0,
+                         'error'     : 0}
+
+        # just in case self.args.longest is True
+        longestidle = 0     
+        longestrunning = 0  
+        now = float(time.time())
 
         queues = {}
         for job in queryout:
@@ -294,10 +317,38 @@ class queuestatus(CondorQuery):
 
             queues[apfqname][jobstatus] += 1
 
+            if self.args.longest:
+            # we calculate the longest idle time and longest running time               
+               if jobstatus == 'running':
+                   newrunningtime = now - float(job['enteredcurrentstatus'])
+                   queues[apfqname]['longestrunning'] = max(newrunningtime, queues[apfqname]['longestrunning'])
+               if jobstatus == 'idle':
+                   newidletime = now - float(job['enteredcurrentstatus'])
+                   queues[apfqname]['longestidle'] = max(newidletime, queues[apfqname]['longestidle'])
+
+
+
         # now we convert integers into strings 
         for k,v in queues.iteritems():
             for k2, v2 in v.iteritems():
                 queues[k][k2] = str(v2)
+
+        # if needed, we convert longest idle and running time into friendly format
+        if self.args.longest:
+            for queue in queues.keys():
+                t = int(float( queues[queue]['longestrunning'] ))
+                days = t/(24*3600)
+                rest = t - days*24*3600
+                m, s = divmod(int(rest), 60)
+                h, m = divmod(m, 60)
+                queues[queue]['longestrunning'] = '%d+%02d:%02d:%02d' %(days, h, m, s)
+
+                t = int(float( queues[queue]['longestidle'] ))
+                days = t/(24*3600)
+                rest = t - days*24*3600
+                m, s = divmod(int(rest), 60)
+                h, m = divmod(m, 60)
+                queues[queue]['longestidle'] = '%d+%02d:%02d:%02d' %(days, h, m, s)
 
         self.out = queues
 
@@ -307,7 +358,7 @@ class queuestatus(CondorQuery):
         for qname in self.out.keys():
             dict_attr = self.out[qname] 
             dict_attr['qname'] = qname
-            new_item = Queue(dict_attr)
+            new_item = Queue(dict_attr, self.args)
             self.container.add(new_item)
 
 
@@ -539,21 +590,33 @@ class Queue(Item):
     This is the class to handle each Slot
     """
 
-    def __init__(self, dict_attr):
+    def __init__(self, dict_attr, args):
         """
         attr_dict is each one of the objects returned by HTCondor query
         """
 
         # this is the list of attributes, or fields,  
         # we want to display in the output
-        self.list_attr = ['qname',
-                          'unsub', 
-                          'idle',
-                          'running',
-                          'removed',
-                          'completed',
-                          'held',
-                          'error']
+        if args.longest:
+            self.list_attr = ['qname',
+                              'unsub', 
+                              'idle',
+                              'running',
+                              'removed',
+                              'completed',
+                              'held',
+                              'error',
+                              'longestidle',
+                              'longestrunning']
+        else:
+            self.list_attr = ['qname',
+                              'unsub', 
+                              'idle',
+                              'running',
+                              'removed',
+                              'completed',
+                              'held',
+                              'error']
 
         super(Queue, self).__init__(dict_attr)
 
@@ -572,4 +635,5 @@ class Queue(Item):
             return 1
         else:
             return 0
+
 
