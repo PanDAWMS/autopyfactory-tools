@@ -1,0 +1,58 @@
+#!/usr/bin/env python 
+
+"""
+kills pilots in zombie status
+"""
+
+#
+# condor_q -format ' MATCH_APF_QUEUE=%s' match_apf_queue 
+#       -format ' JobStatus=%d ' jobstatus  
+#       -format "%d" ClusterId -format  ".%d\n" ProcId | grep OU_OSCER_ATLAS  | grep -v OPP | awk '{print "condor_rm "$NF}'
+#
+
+
+# -------------------------------------------------------------------------------------------------
+#           PARSE INPUTS    
+# -------------------------------------------------------------------------------------------------
+
+import getopt
+import sys
+
+opts, args = getopt.getopt(sys.argv[1:], '', ['queue=', 'status='])
+
+queue = None
+status = 0 
+
+for o, a in opts:
+    if o == '--queue':
+        queue = a
+    if o == '--status':
+        status = a
+
+# -------------------------------------------------------------------------------------------------
+#           QUERY CONDOR
+# -------------------------------------------------------------------------------------------------
+
+cmd = "condor_q "
+cmd += "-format '%s' match_apf_queue "
+cmd += "-format ' %d ' jobstatus "
+cmd += "-format '%d' ClusterId -format  '.%d\n' ProcId "
+
+import commands
+out = commands.getoutput(cmd)
+
+
+# -------------------------------------------------------------------------------------------------
+#          KILL PILOTS 
+# -------------------------------------------------------------------------------------------------
+
+for pilot in out.split('\n'):
+    fields = pilot.split()
+    if len(fields) == 3:
+        p_queue = fields[0]
+        p_jobstatus = fields[1]
+        p_cluster = fields[2]
+        if p_queue == queue and p_jobstatus == status:
+            commands.getoutput('condor_rm %s' %p_cluster)
+        
+
