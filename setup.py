@@ -27,25 +27,23 @@ from distutils.command.install_data import install_data as install_data_org
 # ===========================================================
 
 
-utils_files = ['src/apf-agis-config',
-               'src/apf-queue-status',
-               'src/apf-queue-jobs-by-status.sh',
-               'src/apf-test-pandaclient',
-               'src/apf-check-old-pilots',
-               'src/apf-search-failed',
-               'src/apf-simulate-scheds',
-               ]
 
 # etc files are handled by setup.cfg
-etc_files = ['etc/apf-agis-config-template.conf-example',
-            ]
+etc_files = [ ]
 
+
+sbin_scripts = ['sbin/apf-condor-q',
+                'sbin/apf-condor-status',
+                'sbin/apf-queue-status',
+                'sbin/apf-reverse-logstree',
+                'sbin/apf-simulate-scheds',
+               ]
 
 # -----------------------------------------------------------
 
-rpm_data_files=[('/usr/share/autopyfactory', utils_files),                                        
-                #('/etc/autopyfactory',       etc_files),
-               ]
+rpm_data_files=[('/usr/sbin', sbin_scripts),]
+
+
 
 # -----------------------------------------------------------
 
@@ -84,8 +82,11 @@ setup(
     maintainer='Jose Caballero',
     maintainer_email='jcaballero@bnl.gov',
     url='https://twiki.cern.ch/twiki/bin/view/Atlas/PanDA',
-    packages=[ ],
-    scripts = [ ],
+    packages=['autopyfactory_tools',
+              'autopyfactory_tools.bin',
+              'autopyfactory_tools.lib',
+             ],
+
     
     data_files = choose_data_files()
-)
+
