@@ -1,0 +1,3 @@
+#!/bin/bash
+
+python /usr/lib/python2.6/site-packages/autopyfactory_tools/bin/apf-reverse-logstree.py $@
