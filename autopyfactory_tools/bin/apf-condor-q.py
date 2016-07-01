@@ -1,6 +1,6 @@
 #!/bin/env python
 
-from apftoolslib import condorq
+from autopyfactory-tools.lib.querylib import condorq
 
 import argparse
 
