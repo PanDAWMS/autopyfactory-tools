@@ -1,6 +1,6 @@
 #!/bin/env python
 
-from apftoolslib import condorstatus
+from autopyfactory_tools.lib.querylib import condorstatus
 
 import argparse
 

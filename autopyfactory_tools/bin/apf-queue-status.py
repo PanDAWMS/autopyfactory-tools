@@ -1,7 +1,8 @@
 #!/bin/env python
 
 import argparse
-from apftoolslib import queuestatus
+from autopyfactory_tools.lib.querylib import queuestatus
+
 
 
 parser = argparse.ArgumentParser(description='Prints aggregated status info queue by queue')
