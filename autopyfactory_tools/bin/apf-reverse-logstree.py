@@ -23,9 +23,9 @@ except getopt.GetoptError, err:
 
 for k,v in opts:
     if k == "--basedir":
-    BASEDIR=v 
+        BASEDIR=v 
     if k == "--newdir":
-    NEWDIR=v 
+        NEWDIR=v 
 
 print BASEDIR
 print NEWDIR
