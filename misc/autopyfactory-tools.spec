@@ -18,7 +18,7 @@ Packager: APF Team <autopyfactory-l@lists.bnl.gov>
 Provides: autopyfactory-tools
 #Requires: autopyfactory
 Obsoletes: panda-autopyfactory-tools
-Url: https://twiki.cern.ch/twiki/bin/view/Atlas/PanDA
+Url: https://twiki.grid.iu.edu/bin/view/Documentation/Release3/AutoPyFactoryTools
 
 %description
 This package contains autopyfactory utils
