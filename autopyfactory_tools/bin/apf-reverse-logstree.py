@@ -13,7 +13,7 @@ import sys
 
 
 # DEFAULTS
-BASEDIR = '/home/apf/factory/logs'
+BASEDIR = '/home/autopyfactory/factory/logs'
 NEWDIR = '/tmp/apf-reverse-logstree'
 
 try:
