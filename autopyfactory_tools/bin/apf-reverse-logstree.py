@@ -27,9 +27,6 @@ for k,v in opts:
     if k == "--newdir":
         NEWDIR=v 
 
-print BASEDIR
-print NEWDIR
-
 # remove directory is already exists
 cmd = 'rm -rf %s' %NEWDIR
 commands.getoutput(cmd)
