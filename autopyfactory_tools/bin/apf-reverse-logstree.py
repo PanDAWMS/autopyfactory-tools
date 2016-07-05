@@ -30,6 +30,11 @@ for k,v in opts:
 print BASEDIR
 print NEWDIR
 
+# remove directory is already exists
+cmd = 'rm -rf %s' %NEWDIR
+commands.getoutput(cmd)
+
+
 class QUEUE(object):
     def __init__(self, queue):
         self.queue = queue
@@ -46,7 +51,6 @@ for i in os.listdir(BASEDIR):
             if queue not in LIST_QUEUES.keys():
                 LIST_QUEUES[queue] = QUEUE(queue)
             LIST_QUEUES[queue].dates.append(DATE)
-
 
 for q,Q in LIST_QUEUES.iteritems():
     cmd = 'mkdir -p %s/%s' %(NEWDIR, q) 
