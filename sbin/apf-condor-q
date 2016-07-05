@@ -2,7 +2,7 @@
 #
 # Thin python library executable
 #
-EXEPKG=autopyfactory_tools
+EXEPKG=autopyfactory_tools/bin
 EXEBIN=apf-condor-q.py
 
 ########## Do not edit below this line #############
