@@ -6,11 +6,6 @@ import os
 import re
 import sys
 
-# FIXME
-#  * consider to specify a list of queues and/or list of dates
-#    instead of everything
-#
-
 
 # DEFAULTS
 BASEDIR = '/home/autopyfactory/factory/logs'
