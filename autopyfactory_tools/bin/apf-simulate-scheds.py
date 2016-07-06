@@ -4,6 +4,14 @@
 import logging
 import logging.handlers
 
+# adding the logging level TRACE to avoid problems
+# when we find it in the apf code
+logging.TRACE = 5
+logging.addLevelName(logging.TRACE, 'TRACE')
+def trace(self, msg, *args, **kwargs):
+    self.log(logging.TRACE, msg, *args, **kwargs)
+logging.Logger.trace = trace
+
 from autopyfactory.configloader import Config, ConfigManager
 
 
@@ -119,13 +127,12 @@ scheds = []
 scheds_names = conf.get(section_name, 'schedplugin').split(',')
 scheds_names = [name.strip() for name in scheds_names]
 for name in scheds_names:
-    plugin_module_name = '%sSchedPlugin' %name
-    plugin_module = __import__('autopyfactory.plugins.sched.%s' %plugin_module_name, 
+    plugin_module = __import__('autopyfactory.plugins.queue.sched.%s' %name, 
         globals(),
         locals(),
-        ["%s" % plugin_module_name])
+        ["%s" % name])
 
-    plugin_class_name = plugin_module_name
+    plugin_class_name = name
     plugin_class = getattr(plugin_module, plugin_class_name)
 
     sched = plugin_class(apf)
