@@ -48,8 +48,7 @@ rpm_data_files=[('/usr/sbin', sbin_scripts),]
 # -----------------------------------------------------------
 
 def choose_data_files():
-    rpminstall = True
-    userinstall = False
+    rpminstall = False
      
     if 'bdist_rpm' in sys.argv:
         rpminstall = True
@@ -62,11 +61,8 @@ def choose_data_files():
                 
     if rpminstall:
         return rpm_data_files
-    elif userinstall:
-        return home_data_files
     else:
-        # Something probably went wrong, so punt
-        return rpm_data_files
+        return home_data_files
        
 # ===========================================================
 
