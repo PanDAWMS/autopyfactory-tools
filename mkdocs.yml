@@ -1,0 +1,8 @@
+site_name: Documentation on AutoPyFactory Tools
+pages:
+    - AutoPyFactoryTools: index.md
+theme: mkdocs 
+extra_css: [extra.css]
+
+
+
