@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="./img/favicon.ico">
+
+	<title>Documentation on AutoPyFactory Tools</title>
+
+        <link href="./css/bootstrap-custom.min.css" rel="stylesheet">
+        <link href="./css/font-awesome-4.0.3.css" rel="stylesheet">
+        <link href="./css/base.css" rel="stylesheet">
+        <link rel="stylesheet" href="./css/highlight.css">
+        <link href="./extra.css" rel="stylesheet">
+
+        <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+        <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+        
+    </head>
+
+    <body class="homepage">
+
+        <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            
+
+            <!-- Main title -->
+            <a class="navbar-brand" href=".">Documentation on AutoPyFactory Tools</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+            
+
+            <ul class="nav navbar-nav navbar-right">
+                <li>
+                    <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                        <i class="fa fa-search"></i> Search
+                    </a>
+                </li>
+                
+                
+            </ul>
+        </div>
+    </div>
+</div>
+
+        <div class="container">
+            
+                <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+    
+    </ul>
+</div></div>
+                <div class="col-md-9" role="main">
+
+<p></div>
+<br>
+<br>
+<br>
+<br>
+<h1><a name="AutoPyFactory_Tools"></a> AutoPyFactory Tools </h1>
+<li> 1  About this Document
+</li> <li> 2  Applicable versions
+</li> <li> 3  Description
+</li> <li> 4  Deployment using RPM
+</li> <li> 5  Tools<ul>
+<li> 5.1  apf-condor-q
+</li> <li> 5.2  apf-condor-status
+</li> <li> 5.3  apf-queue-status
+</li> <li> 5.4  apf-simulate-scheds
+</li> <li> 5.5  apf-reverse-logstree
+</li></ul> 
+</li></ul> 
+<p />
+<h1><a name="1_About_this_Document"></a> 1  About this Document </h1>
+<p />
+This document describes the AutoPyFactory Tools, a set of utilities around  AutoPyFactory
+.
+<p />
+Conventions used in this document:
+<p />
+<p />
+<font color="#808080">A <i>User Command Line</i> is illustrated by a green box that displays a prompt:</font>
+<p />
+<pre class="screen">
+  [user@client ~]$
+</pre>
+<p />
+<font color="#808080">A <i>Root Command Line</i> is illustrated by a red box that displays the <em>root</em> prompt:</font>
+<p />
+<pre class="rootscreen">
+  [root@client ~]$
+</pre>
+<p />
+<font color="#808080"><i>Lines in a file</i> are illustrated by a yellow box that displays the desired lines in a file:</font>
+<pre class="file">
+priorities=1
+</pre>
+<p />
+<p />
+<p />
+<p />
+<h1><a name="2_Applicable_versions"></a> 2  Applicable versions </h1>
+<p />
+As the Tools evolve in a different path that AutoPyFactory, the package has a different version number than APF. <br>
+The current version of AutoPyFactory Tools is 1.0.3
+<p />
+<p />
+<strong>WARNING:</strong> these tools may change over time, with no guarantee of backward compatibility. 
+<p />
+<h1><a name="3_Description"></a> 3  Description </h1>
+<p />
+These Tools is a set of utilities related to AutoPyFactory. 
+Therefore, they don't perform any useful action on any host that does not have a factory instance set.
+They are not, extrictly speaking, needed to run the factory, but they provide for ancillary useful commands. 
+<p />
+<h1><a name="4_Deployment_using_RPM"></a> 4  Deployment using RPM </h1>
+<p />
+These instructions assume Red Hat /
+Enterprise Linux 6.x (and derivates) and the system Python 2.6.x. Other distros and higher 
+Python versions should work with some extra work. 
+<p />
+Also, it is assumed that AutoPyFactory has been installed.
+<p />
+We distribute now AutoPyFactory Tools RPMs using the Open Science Grid (OSG) yum infrastructure. 
+Install the OSG yum repo files:
+<p />
+<pre class="rootscreen">
+[root@client ~]$ rpm -Uhv  http://repo.grid.iu.edu/osg/3.3/osg-3.3-el6-release-latest.rpm
+Retrieving http://repo.grid.iu.edu/osg/3.3/osg-3.3-el6-release-latest.rpm
+Preparing...                ########################################### [100%]
+   1:osg-release            ########################################### [100%]
+</pre>
+<p />
+More extensive documentation on how to install the OSG yum files can be found <a href="https://twiki.grid.iu.edu/bin/view/Documentation/Release3/YumRepositories" target="_top">here</a>.
+<p />
+<strong>IMPORTANT</strong>: it may happen that a new version of AutoPyFactory Tools is not available in the release repo, but it is in the development repo. This will happen, for example, when a bug needs to be fixed, and the new RPM is not available yet "officially" until next OSG cycle. 
+Therefore, for this type of cases, you may want to enable the development repo as well, as it is disabled by default, by setting <code><b>enabled=1</b></code> in the file <code>/etc/yum.repos.d/osg-el6-development.repo</code> :
+<p />
+<pre class="file">
+[osg-development]
+name=OSG Software for Enterprise Linux 6 - Development - $basearch
+mirrorlist=http://repo.grid.iu.edu/mirror/osg/3.3/el6/development/$basearch
+failovermethod=priority
+priority=98
+enabled=1
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-OSG
+consider_as_osg=yes</p>
+<p>[osg-development-source]
+name=OSG Software for Enterprise Linux 6 - Development - $basearch - Source
+baseurl=http://repo.grid.iu.edu/osg/3.3/el6/development/source/SRPMS
+failovermethod=priority
+priority=98
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-OSG</p>
+<p>[osg-development-debuginfo]
+name=OSG Software for Enterprise Linux 6 - Development - $basearch - Debug
+baseurl=http://repo.grid.iu.edu/osg/3.3/el6/development/$basearch/debug
+failovermethod=priority
+priority=98
+enabled=0
+gpgcheck=1
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-OSG</p>
+<p></pre>
+<p />
+To install:
+<p />
+<pre class="rootscreen">
+[root@client ~]$ yum install autopyfactory-tools
+</pre><br />
+<p />
+<h1><a name="5_Tools"></a> 5  Tools </h1>
+<p />
+<h2 class="twikinetRoundedAttachments"><span class="twikinetHeader"><a name="5_1_apf_condor_q"></a> 5.1  apf-condor-q </span></h2>
+<p />
+Prints some information about the current pilots, one by one.
+<p />
+Input options:
+<p />
+<table class="tg">
+  <tr>
+    <th class="tg-header">variable</th>
+    <th class="tg-header">description</th>
+    <th class="tg-header">comment</th>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">-H|--headers</td>
+    <td class="tg-raw32s1"> Prints the header of each column</td>
+    <td class="tg-raw33s1">Optional </td>
+  </tr>
+</table>
+<p />
+Example:
+<p />
+<pre class="rootscreen">
+[root@client ~]$ apf-condor-q -H
+id           owner          qdate                cmd                             jobstatus  enteredcurrentstatus  ec2amiid   match_apf_queue                   <br />
+11799213.7   autopyfactory  2016-07-05 15:45:46  /usr/libexec/wrapper-0.9.15.sh  I          0+00:00:00            undefined  mwt2_himem-uct2-gk-htcondor       <br />
+11799213.8   autopyfactory  2016-07-05 15:45:46  /usr/libexec/wrapper-0.9.15.sh  I          0+00:00:00            undefined  mwt2_himem-uct2-gk-htcondor       <br />
+11799213.9   autopyfactory  2016-07-05 15:45:46  /usr/libexec/wrapper-0.9.15.sh  I          0+00:00:00            undefined  mwt2_himem-uct2-gk-htcondor       <br />
+11799214.0   autopyfactory  2016-07-05 15:45:51  /usr/libexec/wrapper-0.9.15.sh  I          0+00:00:00            undefined  mwt2_himem_mcore-uct2-gk-htcondor <br />
+11799215.1   autopyfactory  2016-07-05 15:46:01  /usr/libexec/wrapper-0.9.15.sh  R          0+00:00:49            undefined  analy_swt2_cpb                    <br />
+11799215.2   autopyfactory  2016-07-05 15:46:01  /usr/libexec/wrapper-0.9.15.sh  R          0+00:00:46            undefined  analy_swt2_cpb                    <br />
+11799215.3   autopyfactory  2016-07-05 15:46:01  /usr/libexec/wrapper-0.9.15.sh  R          0+00:00:51            undefined  analy_swt2_cpb   <br />
+  ...
+  ...        <br />
+</pre><br />
+<p />
+<p />
+<p />
+<p />
+<h2 class="twikinetRoundedAttachments"><span class="twikinetHeader"><a name="5_2_apf_condor_status"></a> 5.2  apf-condor-status </span></h2>
+<p />
+Prints information about the condor slots.
+<p />
+Input options:
+<p />
+<table class="tg">
+  <tr>
+    <th class="tg-header">variable</th>
+    <th class="tg-header">description</th>
+    <th class="tg-header">comment</th>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">-H|--headers</td>
+    <td class="tg-raw32s1"> Prints the header of each column</td>
+    <td class="tg-raw33s1">Optional </td>
+  </tr>
+</table>
+<p />
+Example:
+<p />
+<pre class="rootscreen">
+[root@client ~]$ apf-condor-status -H
+name                                         slotid  state    activity  nodetype  loadavg  remotegroup  ec2instanceid  ec2publicdns                                                   ec2amiid    <br />
+host-172-12-1-200.openstack.bnl.gov:slot1_1  1       claimed  busy      atlas     8.33     group_mcore  i-0000216a     server-cada3d8d-02db-4a42-b891-67ab0417dc3d.openstack.bnl.gov  ami-00000046<br />
+host-172-12-1-200.openstack.bnl.gov:slot1_2  1       claimed  busy      atlas     8.3      group_mcore  i-0000216a     server-cada3d8d-02db-4a42-b891-67ab0417dc3d.openstack.bnl.gov  ami-00000046<br />
+host-172-12-1-201.openstack.bnl.gov:slot1_1  1       claimed  busy      atlas     8.15     group_mcore  i-0000216b     server-9af3ae5f-26fe-4122-aa30-739369bed25b.openstack.bnl.gov  ami-00000046<br />
+host-172-12-1-210.openstack.bnl.gov:slot1_1  1       claimed  busy      atlas     8.06     group_mcore  i-00002174     server-4b51499d-5f79-48e3-b739-ffe401d33256.openstack.bnl.gov  ami-00000046<br />
+host-172-12-1-201.openstack.bnl.gov:slot1_2  1       claimed  busy      atlas     8.13     group_mcore  i-0000216b     server-9af3ae5f-26fe-4122-aa30-739369bed25b.openstack.bnl.gov  ami-00000046<br />
+  ...
+  ... 
+</pre>
+<p />
+<h2 class="twikinetRoundedAttachments"><span class="twikinetHeader"><a name="5_3_apf_queue_status"></a> 5.3  apf-queue-status </span></h2>
+<p />
+Prints aggregated status info queue by queue.
+<p />
+Input options:
+<table class="tg">
+  <tr>
+    <th class="tg-header">variable</th>
+    <th class="tg-header">description</th>
+    <th class="tg-header">comment</th>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">-N|--new</td>
+    <td class="tg-raw32s1">Makes the output to be displayed in new format </td>
+    <td class="tg-raw33s1">Optional </td>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">-H|--headers</td>
+    <td class="tg-raw32s1">Prints the header of each column. </td>
+    <td class="tg-raw33s1">Optional<br>Triggers the new output format </td>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">-L|--longest</td>
+    <td class="tg-raw32s1">Prints two additional columns with the longest waiting and running times</td>
+    <td class="tg-raw33s1">Optional <br>Triggers the new output format</td>
+  </tr>
+</table>
+<p />
+Example:
+<p />
+<pre class="rootscreen">
+[root@client ~]$ apf-queue-status -N -H -L
+qname                               unsub  idle  running  removed  completed  held  error  longestidle  longestrunning<br />
+AGLT2_LMEM-htcondor                 0      3     125      0        0          0     0      0+00:27:47   0+05:56:23    <br />
+AGLT2_MCORE-htcondor                0      5     32       0        0          0     0      0+00:27:11   2+21:37:00    <br />
+AGLT2_SL6-htcondor                  0      8     117      0        0          0     0      0+00:10:35   2+07:59:21    <br />
+AGLT2_TEST-htcondor                 0      3     0        0        0          0     0      0+00:13:07   0+00:00:00    <br />
+ANALY_AGLT2_SL6-htcondor            0      100   434      0        0          0     0      0+00:04:36   2+23:24:22    <br />
+ANALY_BNL_LONG-gridgk01-htcondor    0      8     14       0        0          0     0      0+00:36:05   0+08:29:08    <br />
+ANALY_BNL_LONG-gridgk02-htcondor    0      10    20       0        0          0     0      0+00:48:04   1+02:16:41    <br />
+ANALY_BNL_LONG-gridgk03-htcondor    0      72    42       0        0          0     0      0+02:44:07   0+08:38:11    <br />
+ANALY_BNL_LONG-gridgk04-htcondor    0      10    22       0        0          0     0      0+01:04:46   1+14:38:04<br />
+  ...
+  ... 
+</pre>
+<p />
+<h2 class="twikinetRoundedAttachments"><span class="twikinetHeader"><a name="5_4_apf_simulate_scheds"></a> 5.4  apf-simulate-scheds </span></h2>
+<p />
+Allows to simulate the behaviour of the sched plugins. 
+<p />
+Input options:
+<table class="tg">
+  <tr>
+    <th class="tg-header">variable</th>
+    <th class="tg-header">description</th>
+    <th class="tg-header">comment</th>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">--conf=&lt;file&gt;</td>
+    <td class="tg-raw32s1">path to a fake config file with the list of sched plugins and their configurations </td>
+    <td class="tg-raw33s1">Mandatory </td>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">--activated=&lt;n_jobs&gt;</td>
+    <td class="tg-raw32s1">Number of jobs in activated status</td>
+    <td class="tg-raw33s1">Optional. Defaults to 0 </td>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">--pending=&lt;n_pilots&gt;</td>
+    <td class="tg-raw32s1">Number of pilots in pending status</td>
+    <td class="tg-raw33s1">Optional. Defaults to 0 </td>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">--running=&lt;n_pilots&gt;</td>
+    <td class="tg-raw32s1">Number of pilots in runniing status</td>
+    <td class="tg-raw33s1">Optional. Defaults to 0 </td>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">--status=&lt;queue_status&gt;</td>
+    <td class="tg-raw32s1">Status of the WMS queue. <br> Valid values are <code>online</code>, <code>offline</code>, and <code>test</code> </td>
+    <td class="tg-raw33s1">Optional. Defaults to <code>online</code> </td>
+  </tr>
+</table>
+<p />
+Example. Given a fake config file like this one:
+<p />
+<pre class="file">
+Content of file /tmp/sim.conf:</p>
+<p>[FAKE_QUEUE]</p>
+<p>schedplugin = Ready, Scale, MaxPerCycle, MinPerCycle, StatusTest, StatusOffline, MaxPending</p>
+<p>sched.scale.factor = 0.5</p>
+<p>sched.minpercycle.minimum = 1
+sched.maxpercycle.maximum = 100
+sched.maxpending.maximum = 10</p>
+<p>sched.statustest.allowed = True
+sched.statustest.pilots = 3</p>
+<p>sched.statusoffline.allowed = True
+sched.statusoffline.pilots = 0
+</pre>
+<p />
+we can run a command like this
+<p />
+<pre class="rootscreen">
+[root@client ~]$ apf-simulate-scheds.py --conf=file:///tmp/sim.conf --activated=1234 --pending=5 --running=50</p>
+<p>inputs:
+   activated :  1234
+   pending   :  5
+   running   :  50
+   status    :  online</p>
+<p>sched plugin Ready
+   configuration:
+   output 1229 </p>
+<p>sched plugin Scale
+   configuration:
+      sched.scale.factor = 0.5 
+   output 615 </p>
+<p>sched plugin MaxPerCycle
+   configuration:
+      sched.maxpercycle.maximum = 100 
+   output 100 </p>
+<p>sched plugin MinPerCycle
+   configuration:
+      sched.minpercycle.minimum = 1 
+   output 100 </p>
+<p>sched plugin StatusTest
+   configuration:
+      sched.statustest.allowed = True 
+      sched.statustest.pilots = 3 
+   output 100 </p>
+<p>sched plugin StatusOffline
+   configuration:
+      sched.statusoffline.allowed = True 
+      sched.statusoffline.pilots = 0 
+   output 100 </p>
+<p>sched plugin MaxPending
+   configuration:
+      sched.maxpending.maximum = 10 
+   output 5 </p>
+<p>Final output 5
+</pre>
+<p />
+<p />
+<h2 class="twikinetRoundedAttachments"><span class="twikinetHeader"><a name="5_5_apf_reverse_logstree"></a> 5.5  apf-reverse-logstree </span></h2>
+<p />
+This tool creates, using links, a reverse tree structure of the factory logs directories. 
+From an initial tree like this
+<p />
+<pre class="file">
+&lt;BASE_LOGS_DIR&gt;/
+    /2055-03-22/
+        /ANALY_FOO/
+        /FOO_PROD/
+        /FOO_MCORE/
+    /2055-03-23/
+        /ANALY_FOO/
+        /FOO_PROD/
+        /FOO_MCORE/
+    /2055-03-24/
+        /ANALY_FOO/
+        /FOO_PROD/
+        /FOO_MCORE/
+</pre>
+<p />
+it creates a simlinks structure like this:
+<p />
+<pre class="file">
+&lt;NEW_BASE_LOGS_DIR&gt;/
+    /ANALY_FOO/
+        /2055-03-22/
+        /2055-03-24/
+        /2055-03-25/
+    /FOO_PROD/
+        /2055-03-22/
+        /2055-03-24/
+        /2055-03-25/
+    /FOO_MCORE/
+        /2055-03-22/
+        /2055-03-24/
+        /2055-03-25/
+</pre>
+<p />
+Input options:
+<p />
+<table class="tg">
+  <tr>
+    <th class="tg-header">variable</th>
+    <th class="tg-header">description</th>
+    <th class="tg-header">comment</th>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">--basedir=&lt;dir&gt; </td>
+    <td class="tg-raw32s1"> The root path to the tree with logs files.</td>
+    <td class="tg-raw33s1">Optional<br> Default value is <code>/home/autopyfactory/factory/logs/</code> </td>
+  </tr>
+<tr>
+    <td class="tg-raw31s1">--newdir=&lt;dir&gt;</td>
+    <td class="tg-raw32s1"> Location where the new tree, made out of symlinks, will be created.</td>
+    <td class="tg-raw33s1"> Optional <br> Default value is <code>/tmp/apf-reverse-logstree</code> </td>
+  </tr>
+</table>
+<p />
+<p />
+</body>
+</html></p></div>
+            
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            
+            <p>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+
+        <script src="./js/jquery-1.10.2.min.js"></script>
+        <script src="./js/bootstrap-3.0.3.min.js"></script>
+        <script src="./js/highlight.pack.js"></script>
+        <script>var base_url = '.';</script>
+        <script data-main="./mkdocs/js/search.js" src="./mkdocs/js/require.js"></script>
+        <script src="./js/base.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                        <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>
+                            From here you can search these documents. Enter
+                            your search terms below.
+                        </p>
+                        <form role="form">
+                            <div class="form-group">
+                                <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                            </div>
+                        </form>
+                        <div id="mkdocs-search-results"></div>
+                    </div>
+                    <div class="modal-footer">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </body>
+</html>
+
+<!--
+MkDocs version : 0.14.0
+Build Date UTC : 2018-02-06 22:49:31.969913
+-->
