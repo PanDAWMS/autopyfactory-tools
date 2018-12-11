@@ -86,6 +86,17 @@ def get_recentrunning(cq):
     si = si.filter(runningfilter)
     si = si.indexby(IndexByKey('MATCH_APF_QUEUE'))    
     jobdict = si.getraw()
+    
+    for q in jobdict.keys():
+        newest = None
+        joblist = jobdict[q]
+        for j in joblist:
+            if not newest:
+                newest = j
+            else:
+                if int( j['enteredcurrentstatus'] ) > int( newest['enteredcurrentstatus'] ):
+                    newest = j
+        jobdict[q] = [newest]
     return jobdict
 
 
@@ -108,7 +119,19 @@ def get_oldestidle(cq):
     si = si.filter(idlefilter)    
     si = si.indexby(IndexByKey('MATCH_APF_QUEUE'))    
     jobdict = si.getraw()
+    
+    for q in jobdict.keys():
+        oldest = None
+        joblist = jobdict[q]
+        for j in joblist:
+            if not oldest:
+                oldest = j
+            else:
+                if int( j['enteredcurrentstatus'] ) > int( oldest['enteredcurrentstatus'] ):
+                    oldest = j
+        jobdict[q] = [oldest]
     return jobdict
+
 
 
 if __name__ == '__main__':
