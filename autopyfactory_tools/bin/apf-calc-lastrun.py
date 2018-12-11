@@ -9,7 +9,6 @@ import argparse
 '''
  idle = 1
  running = 2
-
 '''
 
 
@@ -25,44 +24,91 @@ class IdleOnlyFilter(AnalyzerFilter):
         return isidle
 
 
+class RunningOnlyFilter(AnalyzerFilter):
+    def filter(self, job):
+        isrunning = False
+        try:
+            jobstatus = int(job['jobstatus'])
+            if jobstatus == 2:
+                isrunning = True
+        except:
+            pass
+        return isrunning
 
-def get_is_full():
+
+
+def get_isfull():
     '''
     For each queue decide if it is full. 
+        
+    
     Return indexed boolean:
     
-      {  'queuelabel1' : True, 'queuelabel2' : False }
+      {  'queuelabel1' : True, 
+         'queuelabel2' : False 
+      }
     
     '''
-
-
-def get_lastrun():
-    '''
-    Determine how old the oldest idle job is for each queue given by key.
-    Determine when the last job to start started.  
-     
-    EnteredCurrentStatus = 1544551885
-    QDate  = 1544551885
+    jobdict = { }
     
-    '''
-
     try:
       
         #pool = HTCondorPool(hostname='localhost', port='9618')
         sd = HTCondorSchedd()
-        attlist = ['jobstatus','MATCH_APF_QUEUE','qdate','enteredcurrentstatus']
+        attlist = ['jobstatus','MATCH_APF_QUEUE','qdate','enteredcurrentstatus','clusterid','procid']
         cq = sd.condor_q(attribute_l = attlist)
-        si = StatusInfo(cq)
-        idlefilter = IdleOnlyFilter()  
-        si = si.filter(idlefilter)
-        si = si.indexby(IndexByKey('MATCH_APF_QUEUE'))    
-        #si = si.process(Count())
-        jobdict = si.getraw()
+        
+        rrdict = get_recentrunning(cq)
+        print("###################### recent runnning ##########################")
+        pprint(rrdict)
+
+        
+        oidict = get_oldestidle(cq)
+        print("###################### recent runnning ##########################")
+        pprint(oidict)
+          
     except:
         pass    
     return jobdict
 
 
+def get_recentrunning(cq):
+    '''
+     Get the most recently started job for each queue by key. 
+        
+      {  'queuelabel1' : '1544551885',   # largest epoch time of all jobs in queue  
+         'queuelabel2' : False 
+      }
+
+    '''
+    si  = StatusInfo(cq)
+    runningfilter = RunningOnlyFilter() 
+    si = si.filter(runningfilter)
+    si = si.indexby(IndexByKey('MATCH_APF_QUEUE'))    
+    jobdict = si.getraw()
+    return jobdict
+
+
+def get_oldestidle(cq):
+    '''
+    Determine how old the oldest idle job is for each queue given by key.
+    Determine when the last job to start started.  
+     
+    EnteredCurrentStatus = 1544551885  
+    QDate  = 1544551885
+
+      {  'queuelabel1' : '1544551885',   # smallest epoch time of all jobs in queue  
+         'queuelabel2' : False 
+      }    
+    
+    
+    '''
+    si  = StatusInfo(cq)
+    idlefilter = IdleOnlyFilter() 
+    si = si.filter(idlefilter)    
+    si = si.indexby(IndexByKey('MATCH_APF_QUEUE'))    
+    jobdict = si.getraw()
+    return jobdict
 
 
 if __name__ == '__main__':
@@ -79,4 +125,4 @@ if __name__ == '__main__':
                     default='MATCH_APF_QUEUE')
     args = parser.parse_args()
 
-    print(get_lastrun())
+    pprint(get_isfull())
