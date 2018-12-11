@@ -74,7 +74,7 @@ if __name__ == '__main__':
     parser.add_argument("-k", "--key", 
                     help="Key to index jobs by [MATCH_APF_QUEUE", 
                     action="store", 
-                    dst='key', 
+                    dest='key', 
                     required=False, 
                     default='MATCH_APF_QUEUE')
     args = parser.parse_args()
