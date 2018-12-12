@@ -46,10 +46,12 @@ class TargetInfo(object):
         self.oldestidle = None     #Classad object of oldest idle job
 
     def __repr__(self):
+        nr = self.newestrunning.replace('\n','')
+        oi = self.oldestidle.replace('\n','')
         s = "TargetInfo: isfull=%s ,howfull=%s , newestrunning=%s , oldestidle=%s " % (self.isFull,
                                                                            self.howFull,
-                                                                           self.newestrunning,
-                                                                           self.oldestidle,
+                                                                           nr,
+                                                                           oi,
                                                                            )
         return s
 
@@ -105,7 +107,7 @@ def get_isfull():
         rrdict = get_recentrunning(cq)      
         oidict = get_oldestidle(cq)
         queuedict = _build_queuedict(rrdict, oidict)
-        pprint(queuedict)
+        print(queuedict)
 
           
     except:
