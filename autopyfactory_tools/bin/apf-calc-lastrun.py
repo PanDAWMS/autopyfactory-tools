@@ -26,7 +26,7 @@ class IdleOnlyFilter(AnalyzerFilter):
 
 class RunningOnlyFilter(AnalyzerFilter):
     def filter(self, job):
-        isrunning = False
+        isrunning = Falseep
         try:
             jobstatus = int(job['jobstatus'])
             if jobstatus == 2:
@@ -55,7 +55,7 @@ def get_isfull():
       
         #pool = HTCondorPool(hostname='localhost', port='9618')
         sd = HTCondorSchedd()
-        attlist = ['jobstatus','MATCH_APF_QUEUE','qdate','enteredcurrentstatus','clusterid','procid']
+        attlist = ['jobstatus','MATCH_APF_QUEUE','qdate','enteredcurrentstatus','clusterid','procid','serverTime']
         cq = sd.condor_q(attribute_l = attlist)
         
         rrdict = get_recentrunning(cq)
@@ -64,7 +64,7 @@ def get_isfull():
 
         
         oidict = get_oldestidle(cq)
-        print("###################### recent runnning ##########################")
+        print("###################### oldest idle ##########################")
         pprint(oidict)
           
     except:
@@ -96,6 +96,8 @@ def get_recentrunning(cq):
             else:
                 if int( j['enteredcurrentstatus'] ) > int( newest['enteredcurrentstatus'] ):
                     newest = j
+        # newest is now  [ jobstatus = 1; MATCH_APF_QUEUE = "ANALY_BNL_SHORT-gridgk07.racf.bnl.gov"; ServerTime = 1544627506; enteredcurrentstatus = 1544627388; clusterid = 398446; procid = 0; qdate = 1544627388; MyType = "Job"; TargetType = "Machine" ]
+        print("Type of job is %s" % type(newest))
         jobdict[q] = [newest]
     return jobdict
 
