@@ -28,7 +28,7 @@ class IdleOnlyFilter(AnalyzerFilter):
 
 class RunningOnlyFilter(AnalyzerFilter):
     def filter(self, job):
-        isrunning = Falseep
+        isrunning = False
         try:
             jobstatus = int(job['jobstatus'])
             if jobstatus == 2:
