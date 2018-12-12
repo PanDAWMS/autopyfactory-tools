@@ -1,10 +1,12 @@
 #!/bin/env python
+import argparse
 import libfactory
 import logging
+import traceback
 from pprint import pprint
 from libfactory.htcondorlib import HTCondorSchedd, HTCondorPool
 from libfactory.info import StatusInfo, IndexByKey, AnalyzerFilter, AnalyzerMap, Count
-import argparse
+
 
 '''
  idle = 1
@@ -20,7 +22,7 @@ class IdleOnlyFilter(AnalyzerFilter):
             if jobstatus == 1:
                 isidle = True
         except:
-            pass
+            print(traceback.format_exc(None))   
         return isidle
 
 
@@ -32,7 +34,8 @@ class RunningOnlyFilter(AnalyzerFilter):
             if jobstatus == 2:
                 isrunning = True
         except:
-            pass
+            print(traceback.format_exc(None))   
+            
         return isrunning
 
 
@@ -68,7 +71,7 @@ def get_isfull():
         pprint(oidict)
           
     except:
-        pass    
+        print(traceback.format_exc(None))   
     return jobdict
 
 
@@ -138,12 +141,12 @@ def get_oldestidle(cq):
 
 if __name__ == '__main__':
     
-    parser = argparse.ArgumentParser(description='Calculates old idle for each queue indexed by key.')
+    parser = argparse.ArgumentParser(description='Calculates oldest idle, recently run for each queue indexed by key.')
     parser.add_argument("-H", "--headers", 
                     help="Prints the header of each column", 
                     action="store_true")
     parser.add_argument("-k", "--key", 
-                    help="Key to index jobs by [MATCH_APF_QUEUE", 
+                    help="Key to index jobs by [MATCH_APF_QUEUE]", 
                     action="store", 
                     dest='key', 
                     required=False, 
@@ -151,3 +154,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     pprint(get_isfull())
+
