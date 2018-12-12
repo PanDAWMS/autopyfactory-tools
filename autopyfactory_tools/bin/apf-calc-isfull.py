@@ -46,9 +46,19 @@ class TargetInfo(object):
         self.oldestidle = None     #Classad object of oldest idle job
 
     def __repr__(self):
-        nr = self.newestrunning.replace('\n','')
-        oi = self.oldestidle.replace('\n','')
-        s = "TargetInfo: isfull=%s ,howfull=%s , newestrunning=%s , oldestidle=%s " % (self.isFull,
+        nr = None
+        oi = None
+        try:
+            nr = int(self.newestrunning['age'])
+        except:
+            pass
+            
+        try:    
+            oi = int(self.oldestidle['age'])
+        except:
+            pass
+        
+        s = "TargetInfo: isfull=%s ,howfull=%s , newestrunningage=%s , oldestidleage=%s " % (self.isFull,
                                                                            self.howFull,
                                                                            nr,
                                                                            oi,
