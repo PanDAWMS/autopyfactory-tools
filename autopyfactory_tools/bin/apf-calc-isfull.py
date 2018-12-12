@@ -44,6 +44,7 @@ class TargetInfo(object):
         self.howFull = None        #floating value 0 - 1.0 ; 1.0 totally full ; 0 = empty
         self.newestrunning = None    # classad object of most recent running job
         self.oldestidle = None     #Classad object of oldest idle job
+    
 
     def __repr__(self):
         nr = None
@@ -158,12 +159,10 @@ def _build_queuedict(runningdict, idledict):
     # fill in values
     
     for q in runningdict.keys():
-        jobage = runningdict[q]['age']
-        print("jobad is %s jobage is %s" % ( runningdict[q], jobage) )
-        queuedict[q].newestrunning = int(jobage) 
+        queuedict[q].newestrunning = runningdict[q]
         
     for q in idledict.keys():
-        queuedict[q].oldestidle = idledict[q]['age']
+        queuedict[q].oldestidle = idledict[q]
         
     return queuedict
 
@@ -172,13 +171,17 @@ def _calc_isfull(queuedict):
     for q in queuedict.keys():
         ti = queuedict[q]
         ti.isfull = False
+        
         if ti.oldestidle is None:
             ti.isfull = False
         else:
             try:
-                if ti.oldestidle > 360 :
-                    ti.isfull = True  
-                if ti.newestrunning < 120:
+                agestr = ti.oldestidle['age'] 
+                if int( agestr  ) > 360 :
+                    ti.isfull = True 
+                
+                agestr = ti.newestrunning['age'] 
+                if int(agestr) < 120 :
                     ti.isfull = False
             except:
                 pass
