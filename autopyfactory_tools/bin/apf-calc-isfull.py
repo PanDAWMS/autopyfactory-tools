@@ -7,12 +7,11 @@ from pprint import pprint
 from libfactory.htcondorlib import HTCondorSchedd, HTCondorPool
 from libfactory.info import StatusInfo, IndexByKey, AnalyzerFilter, AnalyzerMap, Count
 
-
 '''
- idle = 1
- running = 2
+  JOB STATUS
+  idle = 1
+  running = 2
 '''
-
 
 class IdleOnlyFilter(AnalyzerFilter):
     def filter(self, job):
@@ -39,11 +38,46 @@ class RunningOnlyFilter(AnalyzerFilter):
         return isrunning
 
 
+class TargetInfo(object):
+    def __init__(self):
+        self.isFull = None         # boolean full or not 
+        self.howFull = None        #floating value 0 - 1.0 ; 1.0 totally full ; 0 = empty
+        self.newestrunning = None    # classad object of most recent running job
+        self.oldestidle = None     #Classad object of oldest idle job
+
+
+
+def get_howfull():
+    '''
+    Returns a value between 0 and 1 for how full the target is 
+    
+    {  'queuelabel1' : 1.0 , 
+       'queuelabel2' : .33 ,
+       'queuelabel2' : .02 , 
+    }
+    '''
+
 
 def get_isfull():
     '''
     For each queue decide if it is full. 
-        
+    
+    0th:    there is an idle job, and it has been idle for more 
+            than X seconds, where X is related to the size of the target resource. 
+    1st:    there is an idle job, and it has been idle for more than Y seconds, and
+            the last job to start was more than Z seconds ago
+    
+    
+    X = 360
+    Y = 1200
+    
+    if Q does not have idle:
+        FULL = False
+    if Q has started a job within X seconds:
+        FULL = False
+    if Q has NOT started a job within X seconds AND Q has idle job older than Y seconds:
+        FULL = True
+          
     
     Return indexed boolean:
     
@@ -52,7 +86,7 @@ def get_isfull():
       }
     
     '''
-    jobdict = { }
+    queuedict = {}
     
     try:
       
@@ -61,18 +95,45 @@ def get_isfull():
         attlist = ['jobstatus','MATCH_APF_QUEUE','qdate','enteredcurrentstatus','clusterid','procid','serverTime']
         cq = sd.condor_q(attribute_l = attlist)
         
-        rrdict = get_recentrunning(cq)
-        print("###################### recent runnning ##########################")
-        pprint(rrdict)
-
-        
+        rrdict = get_recentrunning(cq)      
         oidict = get_oldestidle(cq)
-        print("###################### oldest idle ##########################")
-        pprint(oidict)
+        queuedict = _build_queuedict(rrdict, oidict)
+        pprint(queuedict)
+
           
     except:
         print(traceback.format_exc(None))   
-    return jobdict
+    return queuedict
+
+def _build_queuedict(runningdict, idledict):
+    '''
+    
+    queuedict = 
+    
+      {      
+         'queuelabel1' : [ isFull, howFull, newestrunningjob, oldestidlejob ] 
+         'queuelabel2' : [ isFull, howFull, newestrunningjob, oldestidlejob ] 
+      }
+      
+      }
+    
+    
+    '''
+    # build empty structure containing all queues. 
+    queuedict = {}
+    for q in runningdict.keys():
+        queuedict[q] = TargetInfo()
+    for q in idledict.keys():
+        queuedict[q] = TargetInfo()
+    
+    for q in runningdict.keys():
+        queuedict[q].newestrunning = runningdict[q]
+        
+    for q in idledict.keys():
+        queuedict[q].oldestidle = idledict[q]
+        
+    return queuedict
+
 
 
 def get_recentrunning(cq):
