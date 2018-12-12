@@ -101,7 +101,11 @@ def get_recentrunning(cq):
                     newest = j
         # newest is now  [ jobstatus = 1; MATCH_APF_QUEUE = "ANALY_BNL_SHORT-gridgk07.racf.bnl.gov"; ServerTime = 1544627506; enteredcurrentstatus = 1544627388; clusterid = 398446; procid = 0; qdate = 1544627388; MyType = "Job"; TargetType = "Machine" ]
         print("Type of job is %s" % type(newest))
-        jobdict[q] = [newest]
+        del newest['jobstatus']
+        del newest['MyType']
+        del newest['TargetType']
+        newest['age'] = int(newest['ServerTime']) - int(newest['enteredcurrentstatus'])
+        jobdict[q] = newest
     return jobdict
 
 
@@ -134,6 +138,15 @@ def get_oldestidle(cq):
             else:
                 if int( j['enteredcurrentstatus'] ) > int( oldest['enteredcurrentstatus'] ):
                     oldest = j
+        # newest is now  [ jobstatus = 1; MATCH_APF_QUEUE = "ANALY_BNL_SHORT-gridgk07.racf.bnl.gov"; ServerTime = 1544627506; enteredcurrentstatus = 1544627388; clusterid = 398446; procid = 0; qdate = 1544627388; MyType = "Job"; TargetType = "Machine" ]
+        print("Type of job is %s" % type(oldest))
+        del oldest['jobstatus']
+        del oldest['MyType']
+        del oldest['TargetType']
+        oldest['age'] = int(oldest['ServerTime']) - int(oldest['enteredcurrentstatus'])
+        jobdict[q] = oldest
+        
+        
         jobdict[q] = [oldest]
     return jobdict
 
