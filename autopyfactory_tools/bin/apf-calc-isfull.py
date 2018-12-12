@@ -152,10 +152,10 @@ def _build_queuedict(runningdict, idledict):
         queuedict[q] = TargetInfo()
     
     for q in runningdict.keys():
-        queuedict[q].newestrunning = int(runningdict[q])
+        queuedict[q].newestrunning = int(runningdict[q]['age'])
         
     for q in idledict.keys():
-        queuedict[q].oldestidle = int(idledict[q])
+        queuedict[q].oldestidle = int(idledict[q]['age'])
         
     return queuedict
 
