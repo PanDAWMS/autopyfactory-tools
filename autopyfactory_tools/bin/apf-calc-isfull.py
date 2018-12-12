@@ -115,10 +115,11 @@ def get_isfull():
         cq = sd.condor_q(attribute_l = attlist)
         
         rrdict = get_recentrunning(cq)      
+        print(rrdict)
         oidict = get_oldestidle(cq)
+        print(oidict)
         queuedict = _build_queuedict(rrdict, oidict)
         print(queuedict)
-
           
     except:
         print(traceback.format_exc(None))   
