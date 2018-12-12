@@ -174,6 +174,7 @@ def _calc_isfull(queuedict):
         
         if ti.oldestidle is None:
             ti.isfull = False
+        
         else:
             try:
                 agestr = ti.oldestidle['age'] 
