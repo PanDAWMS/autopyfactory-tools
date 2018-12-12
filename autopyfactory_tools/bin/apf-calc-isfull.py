@@ -138,7 +138,6 @@ def get_isfull():
 
 def _build_queuedict(runningdict, idledict):
     '''
-    
     queuedict = 
     
       {      
@@ -156,9 +155,12 @@ def _build_queuedict(runningdict, idledict):
         queuedict[q] = TargetInfo()
     for q in idledict.keys():
         queuedict[q] = TargetInfo()
+    # fill in values
     
     for q in runningdict.keys():
-        queuedict[q].newestrunning = runningdict[q]['age']
+        jobage = runningdict[q]['age']
+        print("jobad is %s jobage is %s" % ( runningdict[q], jobage) )
+        queuedict[q].newestrunning = int(jobage) 
         
     for q in idledict.keys():
         queuedict[q].oldestidle = idledict[q]['age']
