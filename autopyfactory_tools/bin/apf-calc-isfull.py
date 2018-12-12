@@ -59,7 +59,7 @@ class TargetInfo(object):
         except:
             pass
         
-        s = "TargetInfo: isfull=%s ,howfull=%s , newestrunningage=%s , oldestidleage=%s " % (self.isfull,
+        s = "TargetInfo: isfull=%s ,howfull=%s , newestrunning[age]=%s , oldestidle[age]=%s " % (self.isfull,
                                                                            self.howfull,
                                                                            nr,
                                                                            oi,
