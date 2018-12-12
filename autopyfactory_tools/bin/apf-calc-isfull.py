@@ -45,6 +45,13 @@ class TargetInfo(object):
         self.newestrunning = None    # classad object of most recent running job
         self.oldestidle = None     #Classad object of oldest idle job
 
+    def __repr__(self):
+        s = "TargetInfo: isfull=%s ,howfull=%s , newestrunning=%s , oldestidle=%s " % (self.isFull,
+                                                                           self.howFull,
+                                                                           self.newestrunning,
+                                                                           self.oldestidle,
+                                                                           )
+        return s
 
 
 def get_howfull():
