@@ -116,13 +116,18 @@ def get_isfull():
         
         rrdict = get_recentrunning(cq)      
         print(rrdict)
+        
         oidict = get_oldestidle(cq)
+        print('####################### oidcit ####################' )
         print(oidict)
         queuedict = _build_queuedict(rrdict, oidict)
+        print('###################### queuedict one ####################')
         print(queuedict)
         queuedict = _calc_isfull(queuedict)
+        print('##################### queuedict after isfull calc ####################')
         print(queuedict)
         queuedict = _calc_howfull(queuedict)
+        print('#################### queuedict after howfull calc ####################')
         print(queuedict)
         
           
