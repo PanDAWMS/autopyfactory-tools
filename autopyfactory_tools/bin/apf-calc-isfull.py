@@ -88,7 +88,7 @@ def get_isfull():
     
     
     X = 360
-    Y = 1200
+    Y = 2000
     
     if Q does not have idle:
         FULL = False
@@ -120,6 +120,11 @@ def get_isfull():
         print(oidict)
         queuedict = _build_queuedict(rrdict, oidict)
         print(queuedict)
+        queuedict = _calc_isfull(queuedict)
+        print(queuedict)
+        queuedict = _calc_howfull(queuedict)
+        print(queuedict)
+        
           
     except:
         print(traceback.format_exc(None))   
@@ -147,11 +152,33 @@ def _build_queuedict(runningdict, idledict):
         queuedict[q] = TargetInfo()
     
     for q in runningdict.keys():
-        queuedict[q].newestrunning = runningdict[q]
+        queuedict[q].newestrunning = int(runningdict[q])
         
     for q in idledict.keys():
-        queuedict[q].oldestidle = idledict[q]
+        queuedict[q].oldestidle = int(idledict[q])
         
+    return queuedict
+
+
+def _calc_isfull(queuedict):
+    for q in queuedict.keys():
+        ti = queuedict[q]
+        ti.isfull = False
+        if ti.oldestidle is None:
+            ti.isfull = False
+        else:
+            try:
+                if ti.oldestidle > 360 :
+                    ti.isfull = True  
+                if ti.newestrunning < 120:
+                    ti.isfull = False
+            except:
+                pass
+        
+    return queuedict
+
+def _calc_howfull(queuedict):
+    
     return queuedict
 
 
