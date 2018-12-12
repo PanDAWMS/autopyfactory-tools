@@ -115,6 +115,7 @@ def get_isfull():
         cq = sd.condor_q(attribute_l = attlist)
         
         rrdict = get_recentrunning(cq)      
+        print('####################### rrdict ####################' )
         print(rrdict)
         
         oidict = get_oldestidle(cq)
@@ -157,10 +158,10 @@ def _build_queuedict(runningdict, idledict):
         queuedict[q] = TargetInfo()
     
     for q in runningdict.keys():
-        queuedict[q].newestrunning = int(runningdict[q]['age'])
+        queuedict[q].newestrunning = runningdict[q]['age']
         
     for q in idledict.keys():
-        queuedict[q].oldestidle = int(idledict[q]['age'])
+        queuedict[q].oldestidle = idledict[q]['age']
         
     return queuedict
 
