@@ -40,8 +40,8 @@ class RunningOnlyFilter(AnalyzerFilter):
 
 class TargetInfo(object):
     def __init__(self):
-        self.isFull = None         # boolean full or not 
-        self.howFull = None        #floating value 0 - 1.0 ; 1.0 totally full ; 0 = empty
+        self.isfull = None         # boolean full or not 
+        self.howfull = None        #floating value 0 - 1.0 ; 1.0 totally full ; 0 = empty
         self.newestrunning = None    # classad object of most recent running job
         self.oldestidle = None     #Classad object of oldest idle job
     
@@ -59,8 +59,8 @@ class TargetInfo(object):
         except:
             pass
         
-        s = "TargetInfo: isfull=%s ,howfull=%s , newestrunningage=%s , oldestidleage=%s " % (self.isFull,
-                                                                           self.howFull,
+        s = "TargetInfo: isfull=%s ,howfull=%s , newestrunningage=%s , oldestidleage=%s " % (self.isfull,
+                                                                           self.howfull,
                                                                            nr,
                                                                            oi,
                                                                            )
