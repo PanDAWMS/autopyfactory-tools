@@ -76,10 +76,6 @@ class TargetStatus(object):
         self.log = logging.getLogger()
 
 
-
-
-
-
     def get_howfull(self):
         '''
         Returns a value between 0 and 1 for how full the target is for all targets.  
@@ -128,24 +124,24 @@ class TargetStatus(object):
             cq = sd.condor_q(attribute_l = attlist)
             
             rrdict = self.get_recentrunning(cq)      
-            print('####################### rrdict ####################' )
-            print(rrdict)
+            self.log.debug('####################### rrdict ####################' )
+            self.log.debug(rrdict)
             
             oidict = self.get_oldestidle(cq)
-            print('####################### oidcit ####################' )
-            print(oidict)
+            self.log.debug('####################### oidcit ####################' )
+            self.log.debug(oidict)
             queuedict = self._build_queuedict(rrdict, oidict)
-            print('###################### queuedict one ####################')
-            print(queuedict)
+            self.log.debug('###################### queuedict one ####################')
+            self.log.debug(queuedict)
             queuedict = self._calc_isfull(queuedict)
-            print('##################### queuedict after isfull calc ####################')
-            print(queuedict)
+            self.log.debug('##################### queuedict after isfull calc ####################')
+            self.log.debug(queuedict)
             queuedict = self._calc_howfull(queuedict)
-            print('#################### queuedict after howfull calc ####################')
-            print(queuedict)
+            self.log.debug('#################### queuedict after howfull calc ####################')
+            self.log.debug(queuedict)
             
         except:
-            print(traceback.format_exc(None))   
+            self.log.debug(traceback.format_exc(None))   
         return queuedict
 
     def _build_queuedict(self, runningdict, idledict):
@@ -289,6 +285,8 @@ if __name__ == '__main__':
                     required=False, 
                     default='MATCH_APF_QUEUE')
     args = parser.parse_args()
+    
+    logging.basicconfig(stream=sys.stdout, level=logging.debug)
 
     ts = TargetStatus()
     pprint(ts.get_isfull())
