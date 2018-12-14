@@ -66,204 +66,213 @@ class TargetInfo(object):
                                                                            )
         return s
 
-
-def get_howfull():
+class TargetStatus(object):
     '''
-    Returns a value between 0 and 1 for how full the target is 
-    
-    {  'queuelabel1' : 1.0 , 
-       'queuelabel2' : .33 ,
-       'queuelabel2' : .02 , 
-    }
-    '''
-
-
-def get_isfull():
-    '''
-    For each queue decide if it is full. 
-    
-    0th:    there is an idle job, and it has been idle for more 
-            than X seconds, where X is related to the size of the target resource. 
-    1st:    there is an idle job, and it has been idle for more than Y seconds, and
-            the last job to start was more than Z seconds ago
-    
-    
-    X = 360
-    Y = 2000
-    
-    if Q does not have idle:
-        FULL = False
-    if Q has started a job within X seconds:
-        FULL = False
-    if Q has NOT started a job within X seconds AND Q has idle job older than Y seconds:
-        FULL = True
-          
-    
-    Return indexed boolean:
-    
-      {  'queuelabel1' : True, 
-         'queuelabel2' : False 
-      }
-    
-    '''
-    queuedict = {}
-    
-    try:
+      Class to store and process the congestion status of HTCondor queues/targets.  
+      Configuration parameters for heuristics provided on init, same for all targets. 
       
-        #pool = HTCondorPool(hostname='localhost', port='9618')
-        sd = HTCondorSchedd()
-        attlist = ['jobstatus','MATCH_APF_QUEUE','qdate','enteredcurrentstatus','clusterid','procid','serverTime']
-        cq = sd.condor_q(attribute_l = attlist)
+    '''
+    def __init__(self):
+        self.log = logging.getLogger()
+
+
+
+
+
+
+    def get_howfull(self):
+        '''
+        Returns a value between 0 and 1 for how full the target is for all targets.  
         
-        rrdict = get_recentrunning(cq)      
-        print('####################### rrdict ####################' )
-        print(rrdict)
+        {  'queuelabel1' : 1.0 , 
+           'queuelabel2' : .33 ,
+           'queuelabel2' : .02 , 
+        }
+        '''
+
+
+    def get_isfull(self):
+        '''
+        For each queue decide if it is full. 
         
-        oidict = get_oldestidle(cq)
-        print('####################### oidcit ####################' )
-        print(oidict)
-        queuedict = _build_queuedict(rrdict, oidict)
-        print('###################### queuedict one ####################')
-        print(queuedict)
-        queuedict = _calc_isfull(queuedict)
-        print('##################### queuedict after isfull calc ####################')
-        print(queuedict)
-        queuedict = _calc_howfull(queuedict)
-        print('#################### queuedict after howfull calc ####################')
-        print(queuedict)
+        0th:    there is an idle job, and it has been idle for more 
+                than X seconds, where X is related to the size of the target resource. 
+        1st:    there is an idle job, and it has been idle for more than Y seconds, and
+                the last job to start was more than Z seconds ago
         
+        
+        X = 360
+        Y = 2000
+        
+        if Q does not have idle:
+            FULL = False
+        if Q has started a job within X seconds:
+            FULL = False
+        if Q has NOT started a job within X seconds AND Q has idle job older than Y seconds:
+            FULL = True
+              
+        
+        Return indexed boolean:
+        
+          {  'queuelabel1' : True, 
+             'queuelabel2' : False 
+          }
+        
+        '''
+        queuedict = {}
+        
+        try:
+            #pool = HTCondorPool(hostname='localhost', port='9618')
+            sd = HTCondorSchedd()
+            attlist = ['jobstatus','MATCH_APF_QUEUE','qdate','enteredcurrentstatus','clusterid','procid','serverTime']
+            cq = sd.condor_q(attribute_l = attlist)
+            
+            rrdict = self.get_recentrunning(cq)      
+            print('####################### rrdict ####################' )
+            print(rrdict)
+            
+            oidict = self.get_oldestidle(cq)
+            print('####################### oidcit ####################' )
+            print(oidict)
+            queuedict = self._build_queuedict(rrdict, oidict)
+            print('###################### queuedict one ####################')
+            print(queuedict)
+            queuedict = self._calc_isfull(queuedict)
+            print('##################### queuedict after isfull calc ####################')
+            print(queuedict)
+            queuedict = self._calc_howfull(queuedict)
+            print('#################### queuedict after howfull calc ####################')
+            print(queuedict)
+            
+        except:
+            print(traceback.format_exc(None))   
+        return queuedict
+
+    def _build_queuedict(self, runningdict, idledict):
+        '''
+        queuedict = 
+        
+          {      
+             'queuelabel1' : [ isFull, howFull, newestrunningjob, oldestidlejob ] 
+             'queuelabel2' : [ isFull, howFull, newestrunningjob, oldestidlejob ] 
+          }
           
-    except:
-        print(traceback.format_exc(None))   
-    return queuedict
-
-def _build_queuedict(runningdict, idledict):
-    '''
-    queuedict = 
-    
-      {      
-         'queuelabel1' : [ isFull, howFull, newestrunningjob, oldestidlejob ] 
-         'queuelabel2' : [ isFull, howFull, newestrunningjob, oldestidlejob ] 
-      }
-      
-      }
-    
-    
-    '''
-    # build empty structure containing all queues. 
-    queuedict = {}
-    for q in runningdict.keys():
-        queuedict[q] = TargetInfo()
-    for q in idledict.keys():
-        queuedict[q] = TargetInfo()
-    # fill in values
-    
-    for q in runningdict.keys():
-        queuedict[q].newestrunning = runningdict[q]
+          }
         
-    for q in idledict.keys():
-        queuedict[q].oldestidle = idledict[q]
         
-    return queuedict
+        '''
+        # build empty structure containing all queues. 
+        queuedict = {}
+        for q in runningdict.keys():
+            queuedict[q] = TargetInfo()
+        for q in idledict.keys():
+            queuedict[q] = TargetInfo()
+        # fill in values
+        
+        for q in runningdict.keys():
+            queuedict[q].newestrunning = runningdict[q]
+            
+        for q in idledict.keys():
+            queuedict[q].oldestidle = idledict[q]
+        return queuedict
 
 
-def _calc_isfull(queuedict):
-    for q in queuedict.keys():
-        ti = queuedict[q]
-        ti.isfull = False
-        
-        if ti.oldestidle is None:
+    def _calc_isfull(self, queuedict):
+        for q in queuedict.keys():
+            ti = queuedict[q]
             ti.isfull = False
-        
-        else:
-            try:
-                agestr = ti.oldestidle['age'] 
-                if int( agestr  ) > 360 :
-                    ti.isfull = True 
-                
-                agestr = ti.newestrunning['age'] 
-                if int(agestr) < 120 :
-                    ti.isfull = False
-            except:
-                pass
-        
-    return queuedict
-
-def _calc_howfull(queuedict):
-    
-    return queuedict
-
-
-
-def get_recentrunning(cq):
-    '''
-     Get the most recently started job for each queue by key. 
-        
-      {  'queuelabel1' : '1544551885',   # largest epoch time of all jobs in queue  
-         'queuelabel2' : False 
-      }
-
-    '''
-    si  = StatusInfo(cq)
-    runningfilter = RunningOnlyFilter() 
-    si = si.filter(runningfilter)
-    si = si.indexby(IndexByKey('MATCH_APF_QUEUE'))    
-    jobdict = si.getraw()
-    
-    for q in jobdict.keys():
-        newest = None
-        joblist = jobdict[q]
-        for j in joblist:
-            if not newest:
-                newest = j
+            
+            if ti.oldestidle is None:
+                ti.isfull = False
+            
             else:
-                if int( j['enteredcurrentstatus'] ) > int( newest['enteredcurrentstatus'] ):
+                try:
+                    agestr = ti.oldestidle['age'] 
+                    if int( agestr  ) > 360 :
+                        ti.isfull = True 
+                    
+                    agestr = ti.newestrunning['age'] 
+                    if int(agestr) < 120 :
+                        ti.isfull = False
+                except:
+                    pass
+        return queuedict
+
+    def _calc_howfull(self, queuedict):
+        
+        return queuedict
+
+
+
+    def get_recentrunning(self, cq):
+        '''
+         Get the most recently started job for each queue by key. 
+            
+          {  'queuelabel1' : '1544551885',   # largest epoch time of all jobs in queue  
+             'queuelabel2' : False 
+          }
+    
+        '''
+        si  = StatusInfo(cq)
+        runningfilter = RunningOnlyFilter() 
+        si = si.filter(runningfilter)
+        si = si.indexby(IndexByKey('MATCH_APF_QUEUE'))    
+        jobdict = si.getraw()
+        
+        for q in jobdict.keys():
+            newest = None
+            joblist = jobdict[q]
+            for j in joblist:
+                if not newest:
                     newest = j
-        # newest is now  [ jobstatus = 1; MATCH_APF_QUEUE = "ANALY_BNL_SHORT-gridgk07.racf.bnl.gov"; ServerTime = 1544627506; enteredcurrentstatus = 1544627388; clusterid = 398446; procid = 0; qdate = 1544627388; MyType = "Job"; TargetType = "Machine" ]
-        #print("Type of job is %s" % type(newest))
-        del newest['MyType']
-        del newest['TargetType']
-        newest['age'] = int(newest['ServerTime']) - int(newest['enteredcurrentstatus'])
-        jobdict[q] = newest
-    return jobdict
+                else:
+                    if int( j['enteredcurrentstatus'] ) > int( newest['enteredcurrentstatus'] ):
+                        newest = j
+            # newest is now  [ jobstatus = 1; MATCH_APF_QUEUE = "ANALY_BNL_SHORT-gridgk07.racf.bnl.gov"; ServerTime = 1544627506; enteredcurrentstatus = 1544627388; clusterid = 398446; procid = 0; qdate = 1544627388; MyType = "Job"; TargetType = "Machine" ]
+            #print("Type of job is %s" % type(newest))
+            del newest['MyType']
+            del newest['TargetType']
+            newest['age'] = int(newest['ServerTime']) - int(newest['enteredcurrentstatus'])
+            jobdict[q] = newest
+        return jobdict
 
 
-def get_oldestidle(cq):
-    '''
-    Determine how old the oldest idle job is for each queue given by key.
-    Determine when the last job to start started.  
-     
-    EnteredCurrentStatus = 1544551885  
-    QDate  = 1544551885
-
-      {  'queuelabel1' : '1544551885',   # smallest epoch time of all jobs in queue  
-         'queuelabel2' : False 
-      }    
+    def get_oldestidle(self, cq):
+        '''
+        Determine how old the oldest idle job is for each queue given by key.
+        Determine when the last job to start started.  
+         
+        EnteredCurrentStatus = 1544551885  
+        QDate  = 1544551885
     
-    
-    '''
-    si  = StatusInfo(cq)
-    idlefilter = IdleOnlyFilter() 
-    si = si.filter(idlefilter)    
-    si = si.indexby(IndexByKey('MATCH_APF_QUEUE'))    
-    jobdict = si.getraw()
-    
-    for q in jobdict.keys():
-        oldest = None
-        joblist = jobdict[q]
-        for j in joblist:
-            if not oldest:
-                oldest = j
-            else:
-                if int( j['enteredcurrentstatus'] ) > int( oldest['enteredcurrentstatus'] ):
+          {  'queuelabel1' : '1544551885',   # smallest epoch time of all jobs in queue  
+             'queuelabel2' : False 
+          }    
+        
+        
+        '''
+        si  = StatusInfo(cq)
+        idlefilter = IdleOnlyFilter() 
+        si = si.filter(idlefilter)    
+        si = si.indexby(IndexByKey('MATCH_APF_QUEUE'))    
+        jobdict = si.getraw()
+        
+        for q in jobdict.keys():
+            oldest = None
+            joblist = jobdict[q]
+            for j in joblist:
+                if not oldest:
                     oldest = j
-        # newest is now  [ jobstatus = 1; MATCH_APF_QUEUE = "ANALY_BNL_SHORT-gridgk07.racf.bnl.gov"; ServerTime = 1544627506; enteredcurrentstatus = 1544627388; clusterid = 398446; procid = 0; qdate = 1544627388; MyType = "Job"; TargetType = "Machine" ]
-        #print("Type of job is %s" % type(oldest))
-        del oldest['MyType']
-        del oldest['TargetType']
-        oldest['age'] = int(oldest['ServerTime']) - int(oldest['enteredcurrentstatus'])
-        jobdict[q] = oldest
-    return jobdict
+                else:
+                    if int( j['enteredcurrentstatus'] ) > int( oldest['enteredcurrentstatus'] ):
+                        oldest = j
+            # newest is now  [ jobstatus = 1; MATCH_APF_QUEUE = "ANALY_BNL_SHORT-gridgk07.racf.bnl.gov"; ServerTime = 1544627506; enteredcurrentstatus = 1544627388; clusterid = 398446; procid = 0; qdate = 1544627388; MyType = "Job"; TargetType = "Machine" ]
+            #print("Type of job is %s" % type(oldest))
+            del oldest['MyType']
+            del oldest['TargetType']
+            oldest['age'] = int(oldest['ServerTime']) - int(oldest['enteredcurrentstatus'])
+            jobdict[q] = oldest
+        return jobdict
 
 
 
@@ -281,5 +290,6 @@ if __name__ == '__main__':
                     default='MATCH_APF_QUEUE')
     args = parser.parse_args()
 
-    pprint(get_isfull())
+    ts = TargetStatus()
+    pprint(ts.get_isfull())
 
