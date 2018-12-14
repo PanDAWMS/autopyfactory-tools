@@ -2,6 +2,7 @@
 import argparse
 import libfactory
 import logging
+import sys
 import traceback
 from pprint import pprint
 from libfactory.htcondorlib import HTCondorSchedd, HTCondorPool
@@ -286,7 +287,7 @@ if __name__ == '__main__':
                     default='MATCH_APF_QUEUE')
     args = parser.parse_args()
     
-    logging.basicconfig(stream=sys.stdout, level=logging.debug)
+    logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
     ts = TargetStatus()
     pprint(ts.get_isfull())
